@@ -1,0 +1,62 @@
+/* Tailwind v4 入口 */
+@import "tailwindcss";
+
+/* === 本地字体（离线可用，替代 Google Fonts CDN）=== */
+
+/* Noto Sans SC — 仅导入项目使用的字重 */
+@import "@fontsource/noto-sans-sc/400.css";
+@import "@fontsource/noto-sans-sc/700.css";
+@import "@fontsource/noto-sans-sc/900.css";
+
+/* Lexend — 仅导入项目使用的字重 */
+@import "@fontsource/lexend/300.css";
+@import "@fontsource/lexend/400.css";
+@import "@fontsource/lexend/500.css";
+@import "@fontsource/lexend/600.css";
+@import "@fontsource/lexend/700.css";
+
+/* Material Icons Round */
+@import "material-icons/iconfont/round.css";
+
+/* Material Symbols Outlined */
+@import "material-symbols/outlined.css";
+
+/* 自定义主题令牌（替代原 CDN tailwind.config） */
+@theme {
+    --color-primary: #f26c0d;
+    --color-primary-dark: #d95a00;
+    --color-background-dark: #121212;
+    --color-surface-dark: #1E1E1E;
+    --color-surface-lighter: #2C2C2C;
+    --color-warm-dark: #221710;
+
+    --font-display: "Lexend", "Noto Sans SC", sans-serif;
+    --font-sans: "Noto Sans SC", sans-serif;
+}
+
+/* 全局样式 */
+body {
+    background-color: #121212;
+    color: white;
+    font-family: 'Noto Sans SC', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* 安全底部间距（兼容刘海屏/底部导航栏） */
+.safe-pb {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+/* 滑尺输入组件样式 */
+.ruler-container {
+    mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+}

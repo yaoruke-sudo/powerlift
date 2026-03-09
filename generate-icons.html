@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Icon Generator</title>
+    <style>
+        body {
+            margin: 20px;
+            background: #222;
+            color: #fff;
+            font-family: sans-serif;
+        }
+
+        .output {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .item {
+            text-align: center;
+        }
+
+        canvas {
+            display: block;
+            margin-bottom: 4px;
+            border: 1px solid #444;
+        }
+
+        a {
+            color: #f26c0d;
+        }
+
+        #status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Android 图标生成器</h1>
+    <div id="status">点击下方按钮生成并下载所有图标</div>
+    <button id="genBtn"
+        style="padding: 12px 24px; background: #f26c0d; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+        生成 & 下载所有图标
+    </button>
+    <div class="output" id="output"></div>
+
+    <script>
+        function drawIcon(size, isForeground) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            if (isForeground) {
+                ctx.clearRect(0, 0, size, size);
+            } else {
+                const grad = ctx.createLinearGradient(0, 0, size, size);
+                grad.addColorStop(0, '#1a1a2e');
+                grad.addColorStop(1, '#16213e');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, size, size);
+            }
+
+            // 绘制「练」字
+            ctx.fillStyle = '#f26c0d';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const fontSize = isForeground ? size * 0.38 : size * 0.52;
+            ctx.font = `900 ${fontSize}px "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif`;
+            ctx.fillText('练', size / 2, size / 2 + fontSize * 0.04);
+
+            return canvas;
+        }
+
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        document.getElementById('genBtn').addEventListener('click', async () => {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+            const status = document.getElementById('status');
+
+            const configs = [
+                // ic_launcher.png
+                { name: 'ic_launcher_mdpi', size: 48, fg: false },
+                { name: 'ic_launcher_hdpi', size: 72, fg: false },
+                { name: 'ic_launcher_xhdpi', size: 96, fg: false },
+                { name: 'ic_launcher_xxhdpi', size: 144, fg: false },
+                { name: 'ic_launcher_xxxhdpi', size: 192, fg: false },
+                // ic_launcher_foreground.png
+                { name: 'ic_launcher_foreground_mdpi', size: 108, fg: true },
+                { name: 'ic_launcher_foreground_hdpi', size: 162, fg: true },
+                { name: 'ic_launcher_foreground_xhdpi', size: 216, fg: true },
+                { name: 'ic_launcher_foreground_xxhdpi', size: 324, fg: true },
+                { name: 'ic_launcher_foreground_xxxhdpi', size: 432, fg: true },
+            ];
+
+            for (let i = 0; i < configs.length; i++) {
+                const { name, size, fg } = configs[i];
+                status.textContent = `正在生成: ${name} (${size}x${size})...`;
+                const canvas = drawIcon(size, fg);
+
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.appendChild(canvas);
+                const label = document.createElement('div');
+                label.textContent = `${name} (${size}x${size})`;
+                div.appendChild(label);
+                output.appendChild(div);
+
+                downloadCanvas(canvas, `${name}.png`);
+                // 等一下防止浏览器合并下载
+                await new Promise(r => setTimeout(r, 300));
+            }
+
+            status.textContent = '所有图标已生成！请查看下载文件夹。';
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: #333;
+        }
+
+        canvas {
+            border: 1px solid #555;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        // 生成不同尺寸的「练」字图标
+        const sizes = [
+            { name: 'xxxhdpi', size: 192 },
+            { name: 'xxhdpi', size: 144 },
+            { name: 'xhdpi', size: 96 },
+            { name: 'hdpi', size: 72 },
+            { name: 'mdpi', size: 48 },
+            { name: 'fg_xxxhdpi', size: 432 },
+            { name: 'fg_xxhdpi', size: 324 },
+            { name: 'fg_xhdpi', size: 216 },
+            { name: 'fg_hdpi', size: 162 },
+            { name: 'fg_mdpi', size: 108 },
+        ];
+
+        sizes.forEach(({ name, size }) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // 背景：深色圆角（这里画正方形，Android 系统会裁剪圆角）
+            const isForeground = name.startsWith('fg_');
+
+            if (isForeground) {
+                // 前景图层：透明背景 + 文字
+                ctx.clearRect(0, 0, size, size);
+            } else {
+                // 完整图标：深色背景 + 文字
+                // 渐变背景
+                const grad = ctx.createLinearGradient(0, 0, size, size);
+                grad.addColorStop(0, '#1a1a2e');
+                grad.addColorStop(1, '#16213e');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, size, size);
+            }
+
+            // 「练」字
+            ctx.fillStyle = '#f26c0d'; // 主题色 primary
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const fontSize = isForeground ? size * 0.4 : size * 0.55;
+            ctx.font = `900 ${fontSize}px "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif`;
+            ctx.fillText('练', size / 2, size / 2 + fontSize * 0.03);
+
+            canvas.title = name;
+            document.body.appendChild(canvas);
+
+            // 导出为 PNG 下载链接
+            const link = document.createElement('a');
+            link.download = `${name}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.textContent = `${name} (${size}x${size})`;
+            link.style.color = 'white';
+            link.style.display = 'block';
+            link.style.margin = '4px 0';
+            document.body.appendChild(link);
+        });
+    </script>
+</body>
+
+</html>
