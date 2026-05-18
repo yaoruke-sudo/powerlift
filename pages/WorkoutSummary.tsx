@@ -48,6 +48,16 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   const allExercises = React.useMemo(() => {
     return localDaySessions.flatMap(s => s.exercises);
   }, [localDaySessions]);
+  const totalSets = React.useMemo(
+    () => allExercises.reduce((sum, ex) => sum + ex.sets.length, 0),
+    [allExercises]
+  );
+  const totalLoad = React.useMemo(
+    () => allExercises.reduce((sum, ex) => (
+      sum + ex.sets.reduce((setSum, set) => setSum + set.weight * set.reps, 0)
+    ), 0),
+    [allExercises]
+  );
 
   const [editingSet, setEditingSet] = React.useState<any>(null);
   const [editWeight, setEditWeight] = React.useState(0);
@@ -145,30 +155,54 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   // --- DETAILS VIEW (Merged) ---
   return (
     <div className="flex flex-col h-full screen-surface overflow-hidden">
-      <header className="pt-12 pb-6 px-8 shrink-0">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => onNavigate('calendar')}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white"
-            >
-              <span className="material-icons-round text-sm">arrow_back</span>
-            </button>
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{date}</div>
-          </div>
-
-          {localDaySessions.length > 0 && (
-            <button
-              onClick={handleDeleteDayWorkouts}
-              className="danger-soft flex items-center gap-1 px-3 py-1.5 rounded-full text-red-400 text-xs font-bold hover:bg-red-500/20"
-            >
-              <span className="material-icons-round text-xs">delete_forever</span>
-              删除本日训练
-            </button>
-          )}
-        </div>
+      <header className="px-5 pt-5 pb-3 shrink-0">
         <AnimatedContent distance={14} duration={360}>
-          <h1 className="text-4xl font-black text-white tracking-tight">今日训练</h1>
+          <section className="cockpit-panel debrief-hero rounded-[1.75rem] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => onNavigate('calendar')}
+                    className="control-button focus-ring flex h-8 w-8 items-center justify-center rounded-xl text-slate-300"
+                  >
+                    <span className="material-icons-round text-sm">arrow_back</span>
+                  </button>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{date}</div>
+                </div>
+                <h1 className="holo-title mt-3 text-4xl font-black tracking-tight text-white">今日训练</h1>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                  Session Debrief
+                </p>
+              </div>
+
+              {localDaySessions.length > 0 && (
+                <button
+                  onClick={handleDeleteDayWorkouts}
+                  className="danger-soft pressable flex items-center gap-1 rounded-xl px-2.5 py-2 text-[11px] font-bold text-red-400 hover:bg-red-500/20"
+                >
+                  <span className="material-icons-round text-xs">delete_forever</span>
+                  删除
+                </button>
+              )}
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {[
+                { label: '动作', value: allExercises.length },
+                { label: '组数', value: totalSets },
+                { label: '负荷', value: Math.round(totalLoad) },
+              ].map(item => (
+                <div key={item.label} className="hud-chip metric-tile hero-metric px-2.5 py-2">
+                  <div className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-500">{item.label}</div>
+                  <div className="mt-1 text-sm font-black text-white font-display">{item.value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="hero-telemetry" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+          </section>
         </AnimatedContent>
       </header>
 
@@ -183,7 +217,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             const secondaryUnit = isCardioExercise ? 'MIN' : 'REPS';
 
             return (
-              <SpotlightCard key={`${ex.id}-${index}`} className="chrome-card rounded-3xl overflow-hidden">
+              <SpotlightCard key={`${ex.id}-${index}`} className="chrome-card session-card rounded-3xl overflow-hidden">
                 <div className="p-5 flex justify-between items-start border-b border-white/5 bg-white/[0.02]">
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-primary border border-white/5">
@@ -205,7 +239,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
                   {ex.sets.map((set, idx) => (
                     <div
                       key={set.id}
-                      className={`flex justify-between items-center text-sm py-1.5 relative ${set.isPR ? 'bg-primary/5 -mx-6 px-6 border-l-4 border-primary' : ''}`}
+                      className={`session-row flex justify-between items-center text-sm py-1.5 relative ${set.isPR ? 'bg-primary/5 -mx-6 px-6 border-l-4 border-primary' : ''}`}
                     >
                       <span className={`w-8 font-black font-display text-xs ${set.isPR ? 'text-primary' : 'text-slate-600'}`}>{idx + 1}</span>
                       <div className="flex-1 pl-4 flex items-baseline gap-1.5">
@@ -245,7 +279,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             })}
           </AnimatedList>
         ) : (
-          <div className="text-center py-20 text-slate-500 text-sm">
+          <div className="empty-state-beacon text-center py-12 text-slate-500 text-sm">
             <span className="material-icons-round text-4xl mb-2 opacity-50">fitness_center</span>
             <p>本日暂无训练记录</p>
           </div>
@@ -256,8 +290,8 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
             as="button"
             onClick={onCreateNew}
             className="pressable w-full rounded-[22px]"
-            contentClassName="w-full rounded-[21px] bg-primary py-4 text-white font-black gap-2 shadow-lg shadow-primary/20 hover:bg-primary-dark transition-colors"
-            color="#fff"
+            contentClassName="action-primary w-full rounded-[21px] py-4 text-white font-black gap-2 transition-colors"
+            color="#d8fbff"
             speed="4.5s"
             thickness={1.5}
           >
@@ -270,7 +304,7 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
       {/* Edit Set Modal */}
       {editingSet && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-          <div className="chrome-card w-full max-w-xs rounded-3xl overflow-hidden p-6 space-y-6">
+          <div className="glass-sheet w-full max-w-xs rounded-3xl overflow-hidden border p-6 space-y-6">
             <h3 className="text-xl font-black text-white text-center">修改数据</h3>
 
             <div className="space-y-4">

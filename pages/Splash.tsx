@@ -137,7 +137,7 @@ const Splash: React.FC<SplashProps> = ({ onStart }) => {
                 </h1>
 
                 <div className="flex justify-center items-center">
-                  <div className="h-1.5 w-24 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full shadow-[0_0_15px_rgba(242,108,13,0.8)]"></div>
+                  <div className="h-1.5 w-24 bg-gradient-to-r from-transparent via-primary to-accent-cyan rounded-full shadow-[0_0_15px_rgba(255,122,26,0.8)]"></div>
                 </div>
 
                 <p className="text-white/40 text-sm font-display tracking-[0.2em] uppercase mt-4">
@@ -156,7 +156,7 @@ const Splash: React.FC<SplashProps> = ({ onStart }) => {
             key={idx}
             onClick={() => setCurrentPage(idx)}
             className={`rounded-full transition-all duration-300 ${idx === currentPage
-                ? 'w-8 h-2 bg-primary shadow-[0_0_10px_rgba(242,108,13,0.6)]'
+                ? 'w-8 h-2 bg-primary shadow-[0_0_10px_rgba(255,122,26,0.6)]'
                 : 'w-2 h-2 bg-white/20 hover:bg-white/40'
               }`}
           />
@@ -168,7 +168,7 @@ const Splash: React.FC<SplashProps> = ({ onStart }) => {
           as="button"
           onClick={onStart}
           className="group w-full rounded-[22px] text-white font-bold text-xl transition-all duration-300 transform active:scale-95"
-          contentClassName="w-full rounded-[21px] bg-primary hover:bg-primary/90 py-5 px-8 shadow-[0_8px_40px_rgba(242,108,13,0.4)]"
+          contentClassName="w-full rounded-[21px] bg-primary hover:bg-primary/90 py-5 px-8 shadow-[0_8px_40px_rgba(255,122,26,0.4)]"
           color="#fff"
           speed="4s"
           thickness={1.5}

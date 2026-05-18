@@ -203,28 +203,41 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
   return (
     <div className="flex flex-col h-full screen-surface overflow-hidden">
       {/* Header */}
-      <header className="px-6 py-8 flex items-center justify-between shrink-0">
+      <header className="px-5 pt-6 pb-4 shrink-0">
         <AnimatedContent distance={16} duration={380}>
-          <h1 className="text-3xl font-black text-white">
-            {initialDate ? '补录训练' : '今日训练'}
-          </h1>
-          <div className="mt-3 flex gap-2">
-            <span className="hud-chip rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-300">
-              {isCardio ? 'Cardio' : 'Power'}
-            </span>
-            <span className="hud-chip rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-primary">
-              {isCardio ? `${duration} MIN` : `${sets} x ${reps}`}
-            </span>
+          <div className="cockpit-panel rounded-[2rem] p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="signal-chip rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]">
+                  <span className="signal-dot" />
+                  Set Builder
+                </div>
+                <h1 className="mt-4 text-3xl font-black leading-none text-white">
+                  {initialDate ? '补录训练' : '今日训练'}
+                </h1>
+                {initialDate && (
+                  <p className="mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                    {initialDate}
+                  </p>
+                )}
+              </div>
+              <button onClick={onBack} className="control-button focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-slate-300">
+                <span className="material-icons-round">close</span>
+              </button>
+            </div>
+            <div className="mt-5 flex gap-2">
+              <span className="hud-chip rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-300">
+                {isCardio ? 'Cardio' : 'Power'}
+              </span>
+              <span className="hud-chip rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-primary">
+                {isCardio ? `${duration} MIN` : `${sets} x ${reps}`}
+              </span>
+              <span className="hud-chip rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-accent-cyan">
+                {isCardio ? `${speed} KM/H` : `${weight} KG`}
+              </span>
+            </div>
           </div>
-          {initialDate && (
-            <p className="text-slate-500 text-sm font-bold tracking-widest uppercase mt-1">
-              {initialDate}
-            </p>
-          )}
         </AnimatedContent>
-        <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-dark text-slate-400">
-          <span className="material-icons-round">close</span>
-        </button>
       </header>
 
       {statusMessage && (
@@ -235,11 +248,11 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto px-6 py-2 space-y-10 scrollbar-hide">
+      <main className="control-deck flex-1 overflow-y-auto px-6 py-2 pb-36 space-y-10 scrollbar-hide">
 
         {/* Active Exercise Card */}
         <GlareHover
-          className="command-card w-full rounded-[28px] shadow-[0_18px_36px_rgba(0,0,0,0.22)]"
+          className="command-card command-console w-full rounded-[28px] shadow-[0_18px_36px_rgba(0,0,0,0.22)]"
           borderRadius="28px"
           background="transparent"
           borderColor="transparent"
@@ -331,7 +344,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                     </button>
                   </div>
                   <div className="relative h-12 ruler-container ruler-meter rounded-2xl overflow-hidden">
-                    <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(242,108,13,0.8)] z-20"></div>
+                    <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(255,122,26,0.8)] z-20"></div>
                     <div className="flex items-end justify-between h-full px-2 opacity-30">
                       {Array.from({ length: 21 }).map((_, i) => (
                         <div key={i} className={`w-0.5 rounded-full bg-white ${i % 5 === 0 ? 'h-full' : 'h-1/2'}`}></div>
@@ -391,7 +404,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                       ></div>
                     </div>
                     <div
-                      className="absolute top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_8px_rgba(242,108,13,0.6)] z-20"
+                      className="absolute top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_8px_rgba(255,122,26,0.6)] z-20"
                       style={{ left: `${(incline / 45) * 100}%` }}
                     ></div>
                   </div>
@@ -421,7 +434,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                       ></div>
                     </div>
                     <div
-                      className="absolute top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_8px_rgba(242,108,13,0.6)] z-20"
+                      className="absolute top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_8px_rgba(255,122,26,0.6)] z-20"
                       style={{ left: `${(speed / 15) * 100}%` }}
                     ></div>
                   </div>
@@ -468,7 +481,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                     </button>
                   </div>
                   <div className="relative h-12 ruler-container ruler-meter rounded-2xl overflow-hidden">
-                    <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(242,108,13,0.8)] z-20"></div>
+                    <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(255,122,26,0.8)] z-20"></div>
                     <div className="flex items-end justify-between h-full px-2 opacity-30">
                       {Array.from({ length: 21 }).map((_, i) => (
                         <div key={i} className={`w-0.5 rounded-full bg-white ${i % 5 === 0 ? 'h-full' : 'h-1/2'}`}></div>
@@ -558,7 +571,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
       </main>
 
       {/* Footer Actions */}
-      <footer className="p-4 pb-7 bg-background-dark/90 backdrop-blur-md space-y-3 border-t border-white/5">
+      <footer className="floating-save-bar p-4 pb-7 backdrop-blur-md space-y-3 border-t border-white/5">
         <div className="chrome-card rounded-xl px-4 py-2.5 flex items-center gap-3">
           <span className="material-icons-round text-slate-500 text-lg">edit_note</span>
           <input
@@ -587,7 +600,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
       {/* Exercise Picker Modal */}
       {isPickerOpen && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/80 backdrop-blur-sm px-4 pb-8 fade-enter">
-          <div className="sheet-enter w-full max-w-sm bg-surface-dark rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[70vh]">
+          <div className="sheet-enter glass-sheet w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border flex flex-col max-h-[70vh]">
             <div className="p-6 border-b border-white/5 flex justify-between items-center">
               <h3 className="text-xl font-black text-white">选择运动项目</h3>
               <button onClick={() => setIsPickerOpen(false)} className="material-icons-round text-slate-500">close</button>

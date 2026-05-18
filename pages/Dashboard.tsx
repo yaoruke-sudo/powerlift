@@ -124,29 +124,49 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
 
   return (
     <div className="flex flex-col h-full screen-surface overflow-hidden">
-      <header className="compact-dashboard-header px-6 pt-8 pb-3 shrink-0">
+      <header className="compact-dashboard-header px-5 pt-5 pb-3 shrink-0">
         <AnimatedContent distance={10} duration={360}>
-          <h1 className="text-4xl font-black text-white mb-1">统计中心</h1>
-          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.18em]">Personal Records</p>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {[
-              { label: 'PR', value: currentPR > 0 ? currentPR : '待破' },
-              { label: '趋势点', value: filteredChartData.length },
-              { label: '模式', value: timeRange },
-            ].map(item => (
-              <div key={item.label} className="hud-chip rounded-lg px-2.5 py-1.5 min-h-[52px]">
-                <div className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-500">{item.label}</div>
-                <div className="mt-0.5 text-sm font-black text-white font-display">{item.value}</div>
+          <section className="cockpit-panel dashboard-hero rounded-[1.75rem] p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="signal-chip rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em]">
+                  <span className="signal-dot" />
+                  Lift Ops Live
+                </div>
+                <h1 className="holo-title mt-3 text-4xl font-black leading-none text-white">统计中心</h1>
+                <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                  Personal Records Command
+                </p>
               </div>
-            ))}
-          </div>
+              <div className="reactor-badge shrink-0">
+                <span className="material-icons-round text-3xl text-primary">bolt</span>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {[
+                { label: 'PR', value: currentPR > 0 ? currentPR : '待破' },
+                { label: '趋势点', value: filteredChartData.length },
+                { label: '模式', value: timeRange },
+              ].map(item => (
+                <div key={item.label} className="hud-chip metric-tile hero-metric px-2.5 py-2">
+                  <div className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-500">{item.label}</div>
+                  <div className="mt-1 text-sm font-black text-white font-display">{item.value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="hero-telemetry" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+          </section>
         </AnimatedContent>
       </header>
 
       {/* 当前选中运动 —— 突出显示卡片，点击展开弹窗 */}
       <section className="px-6 pb-4">
         <GlareHover
-          className="command-card w-full rounded-2xl"
+          className="command-card exercise-command w-full rounded-2xl"
           borderRadius="16px"
           background="transparent"
           borderColor="transparent"
@@ -180,7 +200,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
             onClick={() => setShowExercisePicker(false)}
           />
           {/* 弹窗内容 */}
-          <div className="sheet-enter relative w-full max-w-md bg-surface-dark rounded-t-3xl border-t border-white/10 p-6 pb-10 max-h-[70vh] flex flex-col">
+          <div className="sheet-enter glass-sheet relative w-full max-w-md rounded-t-3xl border-t p-6 pb-10 max-h-[70vh] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-black text-white">选择运动项目</h3>
               <button
@@ -238,7 +258,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
 
       <main className="flex-1 overflow-y-auto scrollbar-hide px-6 pb-32 space-y-8">
         {/* 身体数据卡片 */}
-        <SpotlightCard className="chrome-card rounded-3xl p-6">
+        <SpotlightCard className="chrome-card body-console rounded-3xl p-6">
           <div className="flex justify-between divide-x divide-white/5">
             {[
               { label: '身高', value: userStats.height, unit: 'CM', editable: true },
@@ -269,8 +289,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
 
         {/* PR 展示卡片（数据来自后端） */}
         <SpotlightCard
-          className="chrome-card rounded-3xl p-6 relative overflow-hidden group"
-          spotlightColor="rgba(242, 108, 13, 0.28)"
+          className="chrome-card hero-readout rounded-3xl p-6 relative overflow-hidden group"
+          spotlightColor="rgba(46, 233, 255, 0.2)"
         >
           <div className="absolute right-5 top-5 flex h-16 items-end gap-1 opacity-35">
             {[34, 52, 42, 64, 48].map((height, index) => (
@@ -296,7 +316,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
                 />
                 <span className="text-xl font-black text-primary font-display">{metricUnit}</span>
               </div>
-              <div className="mt-5 h-2 w-40 overflow-hidden rounded-full bg-white/5 ring-1 ring-white/5">
+              <div className="power-bar mt-5 h-2 w-40 overflow-hidden rounded-full bg-white/5 ring-1 ring-white/5">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-primary via-orange-400 to-emerald-400 transition-all duration-500"
                   style={{ width: `${prProgress}%` }}
@@ -353,10 +373,10 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
 
         {/* 趋势图表（数据来自后端） */}
         <FadeContent blur duration={480}>
-          <section className="chrome-card rounded-3xl p-6">
+          <section className="chrome-card chart-console rounded-3xl p-6">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-lg font-black text-white tracking-tight">训练趋势 <span className="text-xs font-normal text-slate-500 ml-2 uppercase">Trends</span></h2>
-            <div className="bg-background-dark rounded-xl p-1 flex border border-white/5">
+            <div className="hud-chip rounded-xl p-1 flex border border-white/5">
               {(['D', 'M'] as const).map(t => (
                 <button
                   key={t}
@@ -373,8 +393,9 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
                 <AreaChart data={filteredChartData}>
                   <defs>
                     <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f26c0d" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#f26c0d" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#ff7a1a" stopOpacity={0.44} />
+                      <stop offset="72%" stopColor="#2ee9ff" stopOpacity={0.12} />
+                      <stop offset="95%" stopColor="#2ee9ff" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
@@ -387,19 +408,19 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
                   />
                   <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1E1E1E', borderColor: '#ffffff10', borderRadius: '16px', fontWeight: 900, color: 'white' }}
-                    itemStyle={{ color: '#f26c0d' }}
-                    cursor={{ stroke: '#f26c0d', strokeWidth: 1 }}
+                    contentStyle={{ backgroundColor: '#101722', borderColor: '#ffffff18', borderRadius: '16px', fontWeight: 900, color: 'white' }}
+                    itemStyle={{ color: '#ff7a1a' }}
+                    cursor={{ stroke: '#2ee9ff', strokeWidth: 1 }}
                   />
                   <Area
                     type="monotone"
                     dataKey="weight"
-                    stroke="#f26c0d"
+                    stroke="#ff7a1a"
                     strokeWidth={4}
                     fillOpacity={1}
                     fill="url(#chartGradient)"
-                    dot={{ fill: '#121212', stroke: '#f26c0d', strokeWidth: 3, r: 5 }}
-                    activeDot={{ r: 7, fill: '#f26c0d', stroke: '#fff', strokeWidth: 2 }}
+                    dot={{ fill: '#05070b', stroke: '#ff7a1a', strokeWidth: 3, r: 5 }}
+                    activeDot={{ r: 7, fill: '#2ee9ff', stroke: '#fff', strokeWidth: 2 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -420,7 +441,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
             onClick={() => setShowBodyEditor(false)}
           />
           {/* 弹窗：flex-col 三段式，按钮行不参与滚动，始终可点击 */}
-          <div className="sheet-enter relative w-full max-w-md bg-surface-dark rounded-t-3xl border-t border-white/10 max-h-[80vh] flex flex-col">
+          <div className="sheet-enter glass-sheet relative w-full max-w-md rounded-t-3xl border-t max-h-[80vh] flex flex-col">
             {/* 拖拽指示条 */}
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-white/10" />
 

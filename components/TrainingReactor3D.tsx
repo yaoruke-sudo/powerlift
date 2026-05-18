@@ -36,12 +36,16 @@ const TrainingReactor3D = () => {
     cyanLight.position.set(2.8, -1.6, 3.2);
     scene.add(cyanLight);
 
+    const limeLight = new THREE.PointLight(0x9cff6a, 0.8, 12);
+    limeLight.position.set(0.2, -2.4, 3.6);
+    scene.add(limeLight);
+
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.22);
     scene.add(ambientLight);
 
     const orangeMaterial = new THREE.MeshStandardMaterial({
-      color: 0xf26c0d,
-      emissive: 0xf26c0d,
+      color: 0xff7a1a,
+      emissive: 0xff7a1a,
       emissiveIntensity: 0.62,
       metalness: 0.7,
       roughness: 0.24,
@@ -55,25 +59,67 @@ const TrainingReactor3D = () => {
       roughness: 0.18,
     });
 
+    const cyanMaterial = new THREE.MeshStandardMaterial({
+      color: 0x2ee9ff,
+      emissive: 0x2ee9ff,
+      emissiveIntensity: 0.36,
+      metalness: 0.42,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.78,
+    });
+
+    const limeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x9cff6a,
+      emissive: 0x9cff6a,
+      emissiveIntensity: 0.28,
+      metalness: 0.32,
+      roughness: 0.24,
+      transparent: true,
+      opacity: 0.66,
+    });
+
     const ghostMaterial = new THREE.MeshBasicMaterial({
-      color: 0xf26c0d,
+      color: 0xff7a1a,
       transparent: true,
       opacity: 0.22,
+      wireframe: true,
+    });
+    const cyanGhostMaterial = new THREE.MeshBasicMaterial({
+      color: 0x2ee9ff,
+      transparent: true,
+      opacity: 0.16,
       wireframe: true,
     });
 
     const ringGroup = new THREE.Group();
     const ringGeometry = new THREE.TorusGeometry(2.35, 0.018, 10, 144);
     const ringGeometryWide = new THREE.TorusGeometry(1.72, 0.035, 14, 144);
+    const ringGeometryCyan = new THREE.TorusGeometry(2.58, 0.014, 10, 160);
     const ringA = new THREE.Mesh(ringGeometry, ghostMaterial);
     const ringB = new THREE.Mesh(ringGeometryWide, orangeMaterial);
-    const ringC = new THREE.Mesh(new THREE.TorusGeometry(2.86, 0.01, 8, 160), ghostMaterial.clone());
-    ringC.material.opacity = 0.16;
+    const ringCGeometry = new THREE.TorusGeometry(2.86, 0.01, 8, 160);
+    const ringC = new THREE.Mesh(ringCGeometry, cyanGhostMaterial);
+    const ringD = new THREE.Mesh(ringGeometryCyan, cyanMaterial);
     ringA.rotation.x = Math.PI / 2.6;
     ringB.rotation.x = Math.PI / 2;
     ringC.rotation.x = Math.PI / 2.1;
-    ringGroup.add(ringA, ringB, ringC);
+    ringD.rotation.x = Math.PI / 2.28;
+    ringGroup.add(ringA, ringB, ringC, ringD);
     root.add(ringGroup);
+
+    const tickGroup = new THREE.Group();
+    const tickGeometry = new THREE.BoxGeometry(0.035, 0.08, 0.34);
+    for (let index = 0; index < 28; index += 1) {
+      const angle = (index / 28) * Math.PI * 2;
+      const radius = index % 7 === 0 ? 2.88 : 2.72;
+      const tick = new THREE.Mesh(tickGeometry, index % 7 === 0 ? limeMaterial : cyanMaterial);
+      tick.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius * 0.26, Math.sin(angle) * 0.8);
+      tick.rotation.z = angle;
+      tick.rotation.x = Math.PI / 2.8;
+      tickGroup.add(tick);
+    }
+    root.add(tickGroup);
 
     const barbell = new THREE.Group();
     const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 3.8, 24), steelMaterial);
@@ -95,7 +141,7 @@ const TrainingReactor3D = () => {
     const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.48, 1), orangeMaterial);
     root.add(core);
 
-    const grid = new THREE.GridHelper(18, 36, 0xf26c0d, 0x2b3b4d);
+    const grid = new THREE.GridHelper(18, 36, 0xff7a1a, 0x173348);
     grid.position.y = -2.45;
     grid.position.z = -2;
     grid.material.transparent = true;
@@ -151,11 +197,11 @@ const TrainingReactor3D = () => {
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
     window.addEventListener('pointerdown', handlePointerDown, { passive: true });
 
-    const clock = new THREE.Clock();
+    const startTime = performance.now();
     let frameId = 0;
 
     const render = () => {
-      const elapsed = clock.getElapsedTime();
+      const elapsed = (performance.now() - startTime) / 1000;
       const pulse = pointer.pulse;
       pointer.pulse *= 0.91;
 
@@ -164,12 +210,17 @@ const TrainingReactor3D = () => {
       ringA.rotation.z = elapsed * 0.33;
       ringB.rotation.z = -elapsed * 0.52;
       ringC.rotation.z = elapsed * 0.18;
+      ringD.rotation.z = -elapsed * 0.28 + pointer.x * 0.08;
+      tickGroup.rotation.z = -elapsed * 0.08;
+      tickGroup.scale.setScalar(1 + pulse * 0.08);
       core.rotation.x = elapsed * 0.7;
       core.rotation.y = elapsed * 0.45;
       core.scale.setScalar(1 + pulse * 0.22 + Math.sin(elapsed * 2) * 0.035);
       barbell.rotation.y = Math.sin(elapsed * 0.7) * 0.18 + pointer.x * 0.12;
       particles.rotation.y = elapsed * 0.025;
       keyLight.intensity = 4.2 + pulse * 3.4;
+      cyanLight.intensity = 1.5 + pulse * 2.2;
+      limeLight.intensity = 0.8 + pulse * 1.1;
 
       renderer.render(scene, camera);
       if (!reducedMotion) frameId = requestAnimationFrame(render);
@@ -185,6 +236,9 @@ const TrainingReactor3D = () => {
       mount.removeChild(renderer.domElement);
       ringGeometry.dispose();
       ringGeometryWide.dispose();
+      ringGeometryCyan.dispose();
+      ringCGeometry.dispose();
+      tickGeometry.dispose();
       particleGeometry.dispose();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
@@ -193,7 +247,10 @@ const TrainingReactor3D = () => {
       });
       orangeMaterial.dispose();
       steelMaterial.dispose();
+      cyanMaterial.dispose();
+      limeMaterial.dispose();
       ghostMaterial.dispose();
+      cyanGhostMaterial.dispose();
       renderer.dispose();
     };
   }, []);

@@ -287,7 +287,7 @@ const App: React.FC = () => {
           <div className="relative h-14 w-14">
             <div className="absolute inset-0 rounded-full border border-primary/20"></div>
             <div className="absolute inset-1 rounded-full border-2 border-transparent border-t-primary animate-spin"></div>
-            <div className="absolute inset-4 rounded-full bg-primary shadow-[0_0_24px_rgba(242,108,13,0.45)]"></div>
+            <div className="absolute inset-4 rounded-full bg-primary shadow-[0_0_24px_rgba(255,122,26,0.45)]"></div>
           </div>
           <div className="text-primary text-sm font-black tracking-[0.24em] uppercase">加载训练数据</div>
         </div>
@@ -300,13 +300,14 @@ const App: React.FC = () => {
       <MicroFeedback />
       <ClickSpark
         className="app-shell kinetic-shell w-full max-w-md h-full bg-background-dark relative shadow-2xl overflow-hidden flex flex-col"
-        sparkColor="#f26c0d"
-        sparkSize={8}
-        sparkRadius={18}
-        sparkCount={8}
+        sparkColor="#2ee9ff"
+        sparkSize={9}
+        sparkRadius={22}
+        sparkCount={10}
         duration={360}
       >
         <TrainingReactor3D />
+        <div className="reactor-overlay" aria-hidden="true" />
         <div className="app-view-layer h-full w-full">
           {renderView()}
         </div>

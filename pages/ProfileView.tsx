@@ -195,14 +195,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
 
   return (
     <div className="flex flex-col h-full screen-surface overflow-hidden">
-      <header className="px-6 pt-12 pb-5 shrink-0">
+      <header className="px-5 pt-6 pb-5 shrink-0">
         <AnimatedContent distance={14} duration={460}>
-          <SpotlightCard className="chrome-card rounded-[2rem] p-4" spotlightColor="rgba(242, 108, 13, 0.18)">
+          <SpotlightCard className="cockpit-panel profile-hero rounded-[2rem] p-4" spotlightColor="rgba(46, 233, 255, 0.18)">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             {/* 头像区域 —— 编辑模式下可点击更换，保留原始颜色 */}
             <div
-              className={`w-20 h-20 rounded-3xl bg-surface-dark border-2 overflow-hidden shadow-2xl relative pressable ${isEditing ? 'border-primary cursor-pointer' : 'border-primary/20'}`}
+              className={`avatar-glass w-20 h-20 rounded-3xl bg-surface-dark border-2 overflow-hidden shadow-2xl relative pressable ${isEditing ? 'border-primary cursor-pointer' : 'border-primary/20'}`}
               onClick={() => isEditing && avatarInputRef.current?.click()}
             >
               {avatarSrc ? (
@@ -309,7 +309,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
               <h2 className="text-xl font-black text-white tracking-tight">记忆照片墙</h2>
               <span className="text-[10px] font-normal text-slate-500 uppercase tracking-widest pt-1">GROWTH GALLERY</span>
             </div>
-            <GlareHover width="32px" borderRadius="12px" borderColor="rgba(242,108,13,0.28)" className="bg-primary/15">
+            <GlareHover width="32px" borderRadius="12px" borderColor="rgba(46,233,255,0.28)" className="bg-primary/15">
               <button
                 type="button"
                 onClick={handleAddPhotoClick}
@@ -333,7 +333,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
               {photos.map((photo, index) => (
                 <div
                   key={photo.id}
-                  className={`chrome-card relative group overflow-hidden rounded-3xl border border-white/5 shadow-xl transition-all duration-500 hover:scale-[1.02] ${index === 0 ? 'col-span-2 aspect-[16/10]' : 'aspect-square'
+                  className={`chrome-card photo-tile relative group overflow-hidden rounded-3xl border border-white/5 shadow-xl transition-all duration-500 hover:scale-[1.02] ${index === 0 ? 'col-span-2 aspect-[16/10]' : 'aspect-square'
                     }`}
                 >
                   <img

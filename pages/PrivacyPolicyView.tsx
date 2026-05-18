@@ -8,11 +8,11 @@ interface PrivacyPolicyViewProps {
 
 const PrivacyPolicyView: React.FC<PrivacyPolicyViewProps> = ({ onNavigate }) => {
     return (
-        <div className="flex flex-col h-full bg-background-dark overflow-hidden">
-            <header className="px-6 pt-12 pb-4 shrink-0 flex items-center gap-3">
+        <div className="flex flex-col h-full screen-surface overflow-hidden">
+            <header className="px-6 pt-8 pb-4 shrink-0 flex items-center gap-3">
                 <button
                     onClick={() => onNavigate('profile')}
-                    className="w-10 h-10 flex items-center justify-center rounded-2xl bg-surface-dark border border-white/5 text-slate-400 hover:text-white transition-colors"
+                    className="control-button focus-ring w-10 h-10 flex items-center justify-center rounded-2xl text-slate-400 hover:text-white transition-colors"
                 >
                     <span className="material-icons-round">arrow_back</span>
                 </button>
@@ -20,7 +20,7 @@ const PrivacyPolicyView: React.FC<PrivacyPolicyViewProps> = ({ onNavigate }) => 
             </header>
 
             <main className="flex-1 overflow-y-auto px-6 pb-12 scrollbar-hide">
-                <div className="bg-surface-dark rounded-3xl border border-white/5 p-6 space-y-6">
+                <div className="chrome-card rounded-3xl border border-white/5 p-6 space-y-6">
                     <div className="text-center space-y-1">
                         <h2 className="text-2xl font-black text-white">「练」隐私政策</h2>
                         <p className="text-xs text-slate-500 leading-relaxed">{PRIVACY_POLICY_DATE_TEXT}</p>

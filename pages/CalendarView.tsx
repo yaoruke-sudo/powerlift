@@ -48,10 +48,25 @@ const CalendarView: React.FC<CalendarViewProps> = ({ history, onSelectDate, onNa
 
   return (
     <div className="flex flex-col h-full screen-surface overflow-hidden">
-      <header className="px-8 pt-12 pb-6">
+      <header className="px-5 pt-6 pb-4">
         <AnimatedContent distance={16} duration={380}>
-          <h1 className="text-4xl font-black text-white mb-2">训练日历</h1>
-          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">History & Planning</p>
+          <section className="cockpit-panel rounded-[2rem] p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="signal-chip rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em]">
+                  <span className="signal-dot" />
+                  Calendar Sync
+                </div>
+                <h1 className="mt-4 text-4xl font-black leading-none text-white">训练日历</h1>
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+                  History & Planning
+                </p>
+              </div>
+              <div className="reactor-badge shrink-0">
+                <span className="material-icons-round text-4xl text-accent-cyan">calendar_month</span>
+              </div>
+            </div>
+          </section>
         </AnimatedContent>
       </header>
 
@@ -90,7 +105,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ history, onSelectDate, onNa
         </div>
 
         {/* Calendar Grid */}
-        <div className="chrome-card rounded-3xl p-6">
+        <div className="chrome-card calendar-panel rounded-3xl p-6">
           <div className="grid grid-cols-7 gap-2 mb-4">
             {['日', '一', '二', '三', '四', '五', '六'].map(d => (
               <div key={d} className="text-center text-[10px] font-black text-slate-600 uppercase">{d}</div>
@@ -113,7 +128,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ history, onSelectDate, onNa
                     >
                       {d.day}
                       {hasWorkout && (
-                        <div className="absolute -bottom-1 w-1 h-1 bg-primary rounded-full shadow-[0_0_4px_rgba(242,108,12,1)]"></div>
+                        <div className="absolute -bottom-1 w-1 h-1 bg-primary rounded-full shadow-[0_0_4px_rgba(255,122,26,1)]"></div>
                       )}
                     </button>
                   ) : (
@@ -128,7 +143,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ history, onSelectDate, onNa
         {/* Legend */}
         <div className="flex items-center gap-6 px-2">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(242,108,13,0.8)]"></div>
+            <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,122,26,0.8)]"></div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">有训练记录</span>
           </div>
           <div className="flex items-center gap-2">
