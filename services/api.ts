@@ -79,23 +79,38 @@ export interface CreateWorkoutPayload {
 
 export async function createWorkout(payload: CreateWorkoutPayload): Promise<WorkoutSession> {
   const id = db.generateId();
+  const previousPrs = await fetchPrRecords(payload.user_id);
+
   const workout: WorkoutSession & { user_id: string } = {
     id,
     user_id: payload.user_id,
     date: payload.date,
     displayDate: payload.display_date, // 注意字段名映射
     duration: payload.duration,
-    exercises: payload.exercises.map(ex => ({
-      id: db.generateId(),
-      type: ex.type as any, // 简化处理
-      chineseName: ex.chinese_name,
-      sets: ex.sets.map(s => ({
+    exercises: payload.exercises.map(ex => {
+      const tracksStrengthPr = ex.type !== 'Incline Cardio' && ex.chinese_name !== '有氧爬坡';
+      const previousPr = previousPrs[ex.type] || previousPrs[ex.chinese_name] || 0;
+      const maxWeightInExercise = Math.max(...ex.sets.map(s => s.weight), 0);
+      const marksNewPr = tracksStrengthPr && maxWeightInExercise > previousPr;
+      let prMarked = false;
+
+      return {
         id: db.generateId(),
-        weight: s.weight,
-        reps: s.reps,
-        isPR: s.is_pr
-      }))
-    }))
+        type: ex.type as any, // 简化处理
+        chineseName: ex.chinese_name,
+        sets: ex.sets.map(s => {
+          const isNewPrSet = marksNewPr && !prMarked && s.weight === maxWeightInExercise && s.weight > 0;
+          if (isNewPrSet) prMarked = true;
+
+          return {
+            id: db.generateId(),
+            weight: s.weight,
+            reps: s.reps,
+            isPR: isNewPrSet
+          };
+        })
+      };
+    })
   };
 
   await db.dbSaveWorkout(workout);

@@ -35,3 +35,15 @@ __pycache__/
 
 # Environment
 .env
+
+# Android / Gradle generated files
+.gradle/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.aab
+
+# Local Codex/plugin tooling
+plugins/

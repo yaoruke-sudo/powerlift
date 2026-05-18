@@ -4,6 +4,7 @@ import { UserStats, ViewState, ExerciseType } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { EXERCISE_INFO } from '../constants';
 import BottomNav from '../components/BottomNav';
+import { AnimatedContent, AnimatedList, CountUp, FadeContent, GlareHover, SpotlightCard } from '../components/reactbits';
 import { fetchPrRecords, fetchTrends, fetchUserProfile, updateUserProfile, DEFAULT_USER_ID } from '../services/api';
 
 interface DashboardProps {
@@ -67,6 +68,10 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
 
   const currentPR = prRecords[selectedExercise] || 0;
   const selectedInfo = EXERCISE_INFO[selectedExercise] || { name: selectedExercise, icon: 'fitness_center' };
+  const isCardioSelected = selectedExercise === ExerciseType.INCLINE_CARDIO;
+  const metricUnit = isCardioSelected ? 'km/h' : 'KG';
+  const metricLabel = isCardioSelected ? 'BEST SPEED / 最佳速度' : 'MAX WEIGHT / 极限';
+  const prProgress = Math.min(100, Math.max(currentPR > 0 ? 8 : 0, (currentPR / (isCardioSelected ? 15 : 200)) * 100));
 
   // 打开编辑弹窗时，用当前 userStats 初始化表单
   const handleOpenBodyEditor = () => {
@@ -118,43 +123,64 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
   const allExercises = Array.from(new Set([...Object.values(ExerciseType), ...validPrKeys]));
 
   return (
-    <div className="flex flex-col h-full bg-background-dark overflow-hidden">
-      <header className="px-8 pt-12 pb-4 shrink-0">
-        <div>
+    <div className="flex flex-col h-full screen-surface overflow-hidden">
+      <header className="compact-dashboard-header px-6 pt-8 pb-3 shrink-0">
+        <AnimatedContent distance={10} duration={360}>
           <h1 className="text-4xl font-black text-white mb-1">统计中心</h1>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">Personal Records</p>
-        </div>
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.18em]">Personal Records</p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {[
+              { label: 'PR', value: currentPR > 0 ? currentPR : '待破' },
+              { label: '趋势点', value: filteredChartData.length },
+              { label: '模式', value: timeRange },
+            ].map(item => (
+              <div key={item.label} className="hud-chip rounded-lg px-2.5 py-1.5 min-h-[52px]">
+                <div className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-500">{item.label}</div>
+                <div className="mt-0.5 text-sm font-black text-white font-display">{item.value}</div>
+              </div>
+            ))}
+          </div>
+        </AnimatedContent>
       </header>
 
       {/* 当前选中运动 —— 突出显示卡片，点击展开弹窗 */}
       <section className="px-6 pb-4">
-        <button
-          onClick={() => setShowExercisePicker(true)}
-          className="w-full bg-primary/10 border border-primary/30 rounded-2xl p-4 flex items-center gap-4 transition-all duration-300 hover:bg-primary/20 active:scale-[0.98]"
+        <GlareHover
+          className="command-card w-full rounded-2xl"
+          borderRadius="16px"
+          background="transparent"
+          borderColor="transparent"
+          glareColor="#ffffff"
+          glareOpacity={0.16}
         >
-          <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-            <span className="material-icons-round text-2xl text-primary">{selectedInfo.icon}</span>
-          </div>
-          <div className="flex-1 text-left">
-            <div className="text-white font-black text-base">{selectedInfo.name}</div>
-            <div className="text-primary text-xs font-bold mt-0.5">
-              {currentPR > 0 ? `极限 ${currentPR} KG` : '暂无记录'}
+          <button
+            onClick={() => setShowExercisePicker(true)}
+            className="pressable focus-ring w-full rounded-2xl p-4 flex items-center gap-4 transition-all duration-300 hover:bg-primary/10 text-left"
+          >
+            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+              <span className="material-icons-round text-2xl text-primary">{selectedInfo.icon}</span>
             </div>
-          </div>
-          <span className="material-icons-round text-slate-400 text-xl">expand_more</span>
-        </button>
+            <div className="flex-1 text-left">
+              <div className="text-white font-black text-base">{selectedInfo.name}</div>
+              <div className="text-primary text-xs font-bold mt-0.5">
+                {currentPR > 0 ? `${isCardioSelected ? '最佳' : '极限'} ${currentPR} ${metricUnit}` : '暂无记录'}
+              </div>
+            </div>
+            <span className="material-icons-round text-slate-400 text-xl">expand_more</span>
+          </button>
+        </GlareHover>
       </section>
 
       {/* 运动选择弹窗 —— 底部弹出式面板 */}
       {showExercisePicker && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center fade-enter">
           {/* 遮罩层 */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowExercisePicker(false)}
           />
           {/* 弹窗内容 */}
-          <div className="relative w-full max-w-md bg-surface-dark rounded-t-3xl border-t border-white/10 p-6 pb-10 animate-in slide-in-from-bottom duration-300 max-h-[70vh] flex flex-col">
+          <div className="sheet-enter relative w-full max-w-md bg-surface-dark rounded-t-3xl border-t border-white/10 p-6 pb-10 max-h-[70vh] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-black text-white">选择运动项目</h3>
               <button
@@ -166,11 +192,12 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
             </div>
             {/* 拖拽指示条 */}
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-white/10" />
-            <div className="overflow-y-auto space-y-2 scrollbar-hide pb-4">
+            <AnimatedList className="overflow-y-auto space-y-2 scrollbar-hide pb-4" staggerDelay={28} distance={10}>
               {allExercises.map((type) => {
                 const info = EXERCISE_INFO[type as ExerciseType] || { name: type, icon: 'fitness_center' };
                 const pr = prRecords[type];
                 const isActive = selectedExercise === type;
+                const unit = type === ExerciseType.INCLINE_CARDIO ? 'km/h' : 'KG';
 
                 return (
                   <button
@@ -193,7 +220,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
                     </div>
                     <div className="text-right">
                       {pr ? (
-                        <span className={`text-sm font-black ${isActive ? 'text-primary' : 'text-slate-400'}`}>{pr} KG</span>
+                        <span className={`text-sm font-black ${isActive ? 'text-primary' : 'text-slate-400'}`}>{pr} {unit}</span>
                       ) : (
                         <span className="text-xs font-bold text-slate-600">—</span>
                       )}
@@ -204,49 +231,76 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
                   </button>
                 );
               })}
-            </div>
+            </AnimatedList>
           </div>
         </div>
       )}
 
       <main className="flex-1 overflow-y-auto scrollbar-hide px-6 pb-32 space-y-8">
         {/* 身体数据卡片 */}
-        <section className="bg-surface-dark rounded-3xl p-6 shadow-2xl border border-white/5 flex justify-between divide-x divide-white/5">
-          {[
-            { label: '身高', value: userStats.height, unit: 'CM', editable: true },
-            { label: '体重', value: userStats.weight.toFixed(1), unit: 'KG', editable: true },
-            { label: 'BMI', value: userStats.bmi, unit: '', highlight: true, editable: false }
-          ].map((stat, i) => (
-            <div
-              key={i}
-              className={`flex flex-col items-center flex-1 ${stat.editable ? 'cursor-pointer group/stat' : ''}`}
-              onClick={stat.editable ? handleOpenBodyEditor : undefined}
-            >
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1">
-                {stat.label}
-                {stat.editable && <span className="material-icons-round text-[10px] text-slate-600">edit</span>}
-              </span>
-              <div className="flex items-baseline gap-1">
-                <span className={`text-2xl font-black font-display ${stat.highlight ? 'text-primary' : 'text-white'}`}>{stat.value}</span>
-                <span className="text-[10px] font-bold text-slate-600">{stat.unit}</span>
+        <SpotlightCard className="chrome-card rounded-3xl p-6">
+          <div className="flex justify-between divide-x divide-white/5">
+            {[
+              { label: '身高', value: userStats.height, unit: 'CM', editable: true },
+              { label: '体重', value: userStats.weight, unit: 'KG', editable: true },
+              { label: 'BMI', value: userStats.bmi, unit: '', highlight: true, editable: false }
+            ].map((stat, i) => (
+              <div
+                key={i}
+                className={`flex flex-col items-center flex-1 ${stat.editable ? 'cursor-pointer group/stat' : ''}`}
+                onClick={stat.editable ? handleOpenBodyEditor : undefined}
+              >
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1">
+                  {stat.label}
+                  {stat.editable && <span className="material-icons-round text-[10px] text-slate-600">edit</span>}
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <CountUp
+                    to={Number(stat.value) || 0}
+                    duration={0.7}
+                    className={`text-2xl font-black font-display ${stat.highlight ? 'text-primary' : 'text-white'}`}
+                  />
+                  <span className="text-[10px] font-bold text-slate-600">{stat.unit}</span>
+                </div>
               </div>
-            </div>
-          ))}
-        </section>
+            ))}
+          </div>
+        </SpotlightCard>
 
         {/* PR 展示卡片（数据来自后端） */}
-        <section className="bg-surface-dark rounded-3xl p-6 border border-white/5 shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-12 -mt-12 transition-all group-hover:bg-primary/20"></div>
+        <SpotlightCard
+          className="chrome-card rounded-3xl p-6 relative overflow-hidden group"
+          spotlightColor="rgba(242, 108, 13, 0.28)"
+        >
+          <div className="absolute right-5 top-5 flex h-16 items-end gap-1 opacity-35">
+            {[34, 52, 42, 64, 48].map((height, index) => (
+              <span
+                key={index}
+                className="w-1 rounded-full bg-primary"
+                style={{ height: `${height}%` }}
+              />
+            ))}
+          </div>
 
           <div className="relative z-10 flex justify-between items-start">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">MAX WEIGHT / 极限</h3>
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{metricLabel}</h3>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-6xl font-black text-white font-display tracking-tighter">{currentPR}</span>
-                <span className="text-xl font-black text-primary font-display">KG</span>
+                <CountUp
+                  to={currentPR}
+                  duration={0.85}
+                  className="text-6xl font-black text-white font-display tracking-tighter"
+                />
+                <span className="text-xl font-black text-primary font-display">{metricUnit}</span>
+              </div>
+              <div className="mt-5 h-2 w-40 overflow-hidden rounded-full bg-white/5 ring-1 ring-white/5">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary via-orange-400 to-emerald-400 transition-all duration-500"
+                  style={{ width: `${prProgress}%` }}
+                />
               </div>
               {/* 基于最近两次训练记录对比，展示实际涨跌幅度 */}
               {(() => {
@@ -295,10 +349,11 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
               <span className="material-icons-round text-3xl">{(EXERCISE_INFO[selectedExercise] || { icon: 'fitness_center' }).icon}</span>
             </div>
           </div>
-        </section>
+        </SpotlightCard>
 
         {/* 趋势图表（数据来自后端） */}
-        <section className="bg-surface-dark rounded-3xl p-6 shadow-2xl border border-white/5">
+        <FadeContent blur duration={480}>
+          <section className="chrome-card rounded-3xl p-6">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-lg font-black text-white tracking-tight">训练趋势 <span className="text-xs font-normal text-slate-500 ml-2 uppercase">Trends</span></h2>
             <div className="bg-background-dark rounded-xl p-1 flex border border-white/5">
@@ -352,19 +407,20 @@ const Dashboard: React.FC<DashboardProps> = ({ userStats, onNavigate, onUserStat
           ) : (
             <div className="h-56 flex items-center justify-center text-slate-500 text-sm">暂无趋势数据</div>
           )}
-        </section>
+          </section>
+        </FadeContent>
       </main>
 
       {/* 身高体重编辑弹窗 —— 底部弹出式面板 */}
       {showBodyEditor && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center fade-enter">
           {/* 遮罩层 */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowBodyEditor(false)}
           />
           {/* 弹窗：flex-col 三段式，按钮行不参与滚动，始终可点击 */}
-          <div className="relative w-full max-w-md bg-surface-dark rounded-t-3xl border-t border-white/10 animate-in slide-in-from-bottom duration-300 max-h-[80vh] flex flex-col">
+          <div className="sheet-enter relative w-full max-w-md bg-surface-dark rounded-t-3xl border-t border-white/10 max-h-[80vh] flex flex-col">
             {/* 拖拽指示条 */}
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-white/10" />
 

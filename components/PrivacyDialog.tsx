@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { PRIVACY_POLICY_DATE_TEXT, SUPPORT_EMAIL } from '../constants';
 
 interface PrivacyDialogProps {
     onAgree: () => void;
@@ -38,14 +39,22 @@ const PrivacyDialog: React.FC<PrivacyDialogProps> = ({ onAgree }) => {
                             欢迎使用「练」（以下简称"本应用"）。我们非常重视您的个人隐私和数据安全。在您使用本应用之前，请阅读以下隐私政策要点：
                         </p>
 
+                        <p className="text-slate-400">
+                            <strong className="text-slate-300">开发者名称/个人信息处理者：</strong>姚如轲
+                        </p>
+
+                        <p className="text-slate-400">
+                            <strong className="text-slate-300">政策日期：</strong>{PRIVACY_POLICY_DATE_TEXT}
+                        </p>
+
                         <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 space-y-2">
                             <div className="flex items-start gap-2">
                                 <span className="material-icons-round text-primary text-sm mt-0.5">check_circle</span>
-                                <span>本应用为<strong className="text-white">完全离线应用</strong>，不会联网传输任何数据</span>
+                                <span>本应用采用<strong className="text-white">本地离线存储</strong>，不会向开发者服务器传输任何数据</span>
                             </div>
                             <div className="flex items-start gap-2">
                                 <span className="material-icons-round text-primary text-sm mt-0.5">check_circle</span>
-                                <span>本应用<strong className="text-white">不收集任何个人信息</strong>（包括姓名、手机号、位置、设备标识等）</span>
+                                <span>本应用<strong className="text-white">不收集、上传任何个人信息</strong>（包括姓名、手机号、位置、设备标识等）</span>
                             </div>
                             <div className="flex items-start gap-2">
                                 <span className="material-icons-round text-primary text-sm mt-0.5">check_circle</span>
@@ -66,7 +75,7 @@ const PrivacyDialog: React.FC<PrivacyDialogProps> = ({ onAgree }) => {
                         </p>
 
                         <p className="text-slate-500 text-xs">
-                            您可以在"我的"页面随时查看完整隐私政策。如有疑问请联系：1444893869@qq.com
+                            您可以在"我的"页面随时查看完整隐私政策。如有疑问或建议，可通过客服反馈邮箱联系开发者姚如轲：{SUPPORT_EMAIL}
                         </p>
                     </div>
                 </div>

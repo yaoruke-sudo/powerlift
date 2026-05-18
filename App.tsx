@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { App as CapacitorApp } from '@capacitor/app';
 import Splash from './pages/Splash';
 import Dashboard from './pages/Dashboard';
 import RecordWorkout from './pages/RecordWorkout';
@@ -8,6 +9,9 @@ import CalendarView from './pages/CalendarView';
 import ProfileView from './pages/ProfileView';
 import PrivacyPolicyView from './pages/PrivacyPolicyView';
 import PrivacyDialog from './components/PrivacyDialog';
+import MicroFeedback from './components/MicroFeedback';
+import TrainingReactor3D from './components/TrainingReactor3D';
+import { ClickSpark } from './components/reactbits';
 import { ViewState, UserStats, WorkoutSession } from './types';
 import { fetchUserStats, fetchWorkouts, DEFAULT_USER_ID } from './services/api';
 
@@ -18,6 +22,82 @@ const App: React.FC = () => {
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutSession[]>([]);
   const [targetDate, setTargetDate] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const currentViewRef = useRef<ViewState>('splash');
+  const viewHistoryRef = useRef<ViewState[]>([]);
+
+  const goToDashboard = useCallback(() => {
+    viewHistoryRef.current = [];
+    setTargetDate(null);
+    setSelectedSession(null);
+    currentViewRef.current = 'dashboard';
+    setCurrentView('dashboard');
+  }, []);
+
+  const navigateTo = useCallback((nextView: ViewState, options: { replace?: boolean } = {}) => {
+    const activeView = currentViewRef.current;
+    if (nextView === activeView) return;
+
+    if (nextView === 'dashboard') {
+      goToDashboard();
+      return;
+    }
+
+    if (options.replace) {
+      const lastHistoryView = viewHistoryRef.current[viewHistoryRef.current.length - 1];
+      if (lastHistoryView === nextView) {
+        viewHistoryRef.current.pop();
+      }
+    } else if (activeView !== 'splash') {
+      const lastHistoryView = viewHistoryRef.current[viewHistoryRef.current.length - 1];
+      if (lastHistoryView !== activeView) {
+        viewHistoryRef.current.push(activeView);
+      }
+    }
+
+    currentViewRef.current = nextView;
+    setCurrentView(nextView);
+  }, [goToDashboard]);
+
+  const handleHardwareBack = useCallback(() => {
+    const previousView = viewHistoryRef.current.pop();
+
+    if (previousView) {
+      if (previousView === 'dashboard') {
+        goToDashboard();
+      } else {
+        currentViewRef.current = previousView;
+        setCurrentView(previousView);
+      }
+      return true;
+    }
+
+    if (currentViewRef.current !== 'dashboard' && currentViewRef.current !== 'splash') {
+      goToDashboard();
+      return true;
+    }
+
+    return false;
+  }, [goToDashboard]);
+
+  useEffect(() => {
+    currentViewRef.current = currentView;
+  }, [currentView]);
+
+  useEffect(() => {
+    let backButtonListener: { remove: () => Promise<void> } | undefined;
+
+    CapacitorApp.addListener('backButton', () => {
+      if (!handleHardwareBack()) {
+        void CapacitorApp.exitApp();
+      }
+    }).then(listener => {
+      backButtonListener = listener;
+    });
+
+    return () => {
+      void backButtonListener?.remove();
+    };
+  }, [handleHardwareBack]);
 
   // 隐私政策同意状态，从 localStorage 读取
   const [privacyAgreed, setPrivacyAgreed] = useState<boolean>(
@@ -30,7 +110,7 @@ const App: React.FC = () => {
     localStorage.setItem('privacy_agreed', 'true');
     setPrivacyAgreed(true);
     setShowPrivacyDialog(false);
-    setCurrentView('dashboard');
+    goToDashboard();
   };
 
   /**
@@ -61,9 +141,9 @@ const App: React.FC = () => {
     setTargetDate(date);
     setSelectedSession(null);
     if (hasData) {
-      setCurrentView('summary');
+      navigateTo('summary');
     } else {
-      setCurrentView('record');
+      navigateTo('record');
     }
   };
 
@@ -96,15 +176,15 @@ const App: React.FC = () => {
 
       // 3. 立即跳转
       setSelectedSession(savedSession);
-      setCurrentView('summary');
+      navigateTo('summary', { replace: true });
     } else {
       // Cancelled or no save
       // If we have history, go to summary of most recent, else dashboard
       if (workoutHistory.length > 0) {
         setSelectedSession(workoutHistory[0]);
-        setCurrentView('summary');
+        navigateTo('summary', { replace: true });
       } else {
-        setCurrentView('dashboard');
+        goToDashboard();
       }
     }
   };
@@ -118,7 +198,7 @@ const App: React.FC = () => {
           if (!privacyAgreed) {
             setShowPrivacyDialog(true);
           } else {
-            setCurrentView('dashboard');
+            goToDashboard();
           }
         }} />;
       case 'dashboard':
@@ -126,7 +206,8 @@ const App: React.FC = () => {
           userStats={userStats}
           onNavigate={(v) => {
             setTargetDate(null); // Reset date when starting from dashboard
-            setCurrentView(v);
+            setSelectedSession(null);
+            navigateTo(v);
           }}
           onUserStatsUpdated={(stats) => setUserStats(stats)}
         />;
@@ -138,22 +219,22 @@ const App: React.FC = () => {
             setTargetDate(date);
             if (hasData) {
               setSelectedSession(null);
-              setCurrentView('summary');
+              navigateTo('summary');
             } else {
-              setCurrentView('record');
+              navigateTo('record');
             }
           }}
           onSelectSession={(session) => {
             setSelectedSession(session);
-            setCurrentView('summary');
+            navigateTo('summary');
           }}
-          onNavigate={(v) => setCurrentView(v)}
+          onNavigate={(v) => navigateTo(v)}
         />;
 
       case 'record':
         return <RecordWorkout
           initialDate={targetDate || undefined}
-          onBack={() => setCurrentView('dashboard')}
+          onBack={() => { handleHardwareBack(); }}
           onSave={handleWorkoutSaved}
         />;
       case 'summary':
@@ -168,21 +249,21 @@ const App: React.FC = () => {
           onSelectSession={(s) => setSelectedSession(s)}
           onCreateNew={() => {
             setTargetDate(displayDate);
-            setCurrentView('record');
+            navigateTo('record');
           }}
-          onNavigate={(v) => setCurrentView(v)}
+          onNavigate={(v) => navigateTo(v)}
           onDataChanged={loadData}
         />;
 
 
 
       case 'privacy':
-        return <PrivacyPolicyView onNavigate={(v) => setCurrentView(v)} />;
+        return <PrivacyPolicyView onNavigate={(v) => navigateTo(v)} />;
 
       case 'profile':
         return (
           <ProfileView
-            onNavigate={(v) => setCurrentView(v)}
+            onNavigate={(v) => navigateTo(v)}
             onProfileUpdated={(profile) => {
               // “我的”中修改身高体重后，立刻同步到统计用的 userStats
               setUserStats({
@@ -194,7 +275,7 @@ const App: React.FC = () => {
           />
         );
       default:
-        return <Dashboard userStats={userStats} onNavigate={(v) => setCurrentView(v)} />;
+        return <Dashboard userStats={userStats} onNavigate={(v) => navigateTo(v)} />;
     }
   };
 
@@ -202,16 +283,34 @@ const App: React.FC = () => {
   if (isLoading && currentView !== 'splash') {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-background-dark">
-        <div className="animate-pulse text-primary text-xl font-black">加载中...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative h-14 w-14">
+            <div className="absolute inset-0 rounded-full border border-primary/20"></div>
+            <div className="absolute inset-1 rounded-full border-2 border-transparent border-t-primary animate-spin"></div>
+            <div className="absolute inset-4 rounded-full bg-primary shadow-[0_0_24px_rgba(242,108,13,0.45)]"></div>
+          </div>
+          <div className="text-primary text-sm font-black tracking-[0.24em] uppercase">加载训练数据</div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-background-dark overflow-hidden">
-      <div className="w-full max-w-md h-full bg-background-dark relative shadow-2xl overflow-hidden flex flex-col">
-        {renderView()}
-      </div>
+      <MicroFeedback />
+      <ClickSpark
+        className="app-shell kinetic-shell w-full max-w-md h-full bg-background-dark relative shadow-2xl overflow-hidden flex flex-col"
+        sparkColor="#f26c0d"
+        sparkSize={8}
+        sparkRadius={18}
+        sparkCount={8}
+        duration={360}
+      >
+        <TrainingReactor3D />
+        <div className="app-view-layer h-full w-full">
+          {renderView()}
+        </div>
+      </ClickSpark>
       {/* 首次启动隐私政策弹窗 */}
       {showPrivacyDialog && <PrivacyDialog onAgree={handlePrivacyAgree} />}
     </div>

@@ -1,6 +1,10 @@
 
 import { ExerciseType } from './types';
 
+export const SUPPORT_EMAIL = '1444893869@qq.com';
+export const SUPPORT_REPLY_TIME = '通常在 7 个工作日内回复';
+export const PRIVACY_POLICY_DATE_TEXT = '发布日期：2026年05月17日　生效日期：2026年05月17日　更新日期：2026年05月17日';
+
 export const EXERCISE_INFO: Record<string, { name: string, icon: string }> = {
   [ExerciseType.BENCH_PRESS]: { name: '杠铃卧推', icon: 'fitness_center' },
   [ExerciseType.INCLINE_DUMBBELL_PRESS]: { name: '哑铃上斜推举', icon: 'north_east' },

@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { WorkoutSession, ViewState } from '../types';
+import { ExerciseType, WorkoutSession, ViewState } from '../types';
 import { EXERCISE_INFO } from '../constants';
 import BottomNav from '../components/BottomNav';
+import { AnimatedContent, AnimatedList, CountUp, SpotlightCard, StarBorder } from '../components/reactbits';
 
 import { updateSet, deleteWorkout, deleteSet } from '../services/api';
 
@@ -51,6 +52,11 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
   const [editingSet, setEditingSet] = React.useState<any>(null);
   const [editWeight, setEditWeight] = React.useState(0);
   const [editReps, setEditReps] = React.useState(0);
+  const editingExercise = React.useMemo(
+    () => allExercises.find(ex => ex.sets.some(set => set.id === editingSet?.id)),
+    [allExercises, editingSet]
+  );
+  const isEditingCardio = editingExercise?.type === ExerciseType.INCLINE_CARDIO || editingExercise?.type === 'Incline Cardio';
 
   // 删除当天所有训练记录
   const handleDeleteDayWorkouts = async () => {
@@ -138,8 +144,8 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
 
   // --- DETAILS VIEW (Merged) ---
   return (
-    <div className="flex flex-col h-full bg-background-dark overflow-hidden">
-      <header className="pt-12 pb-6 px-8 shrink-0 bg-background-dark">
+    <div className="flex flex-col h-full screen-surface overflow-hidden">
+      <header className="pt-12 pb-6 px-8 shrink-0">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <button
@@ -154,80 +160,90 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
           {localDaySessions.length > 0 && (
             <button
               onClick={handleDeleteDayWorkouts}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-500/10 text-red-400 text-xs font-bold border border-red-500/40 hover:bg-red-500/20"
+              className="danger-soft flex items-center gap-1 px-3 py-1.5 rounded-full text-red-400 text-xs font-bold hover:bg-red-500/20"
             >
               <span className="material-icons-round text-xs">delete_forever</span>
               删除本日训练
             </button>
           )}
         </div>
-        <h1 className="text-4xl font-black text-white tracking-tight">今日训练</h1>
+        <AnimatedContent distance={14} duration={360}>
+          <h1 className="text-4xl font-black text-white tracking-tight">今日训练</h1>
+        </AnimatedContent>
       </header>
 
 
       <main className="flex-1 overflow-y-auto scrollbar-hide px-6 py-2 space-y-6 pb-28">
         {/* Exercises List - Merged from all sessions */}
         {allExercises.length > 0 ? (
-          allExercises.map((ex, index) => (
-            <div key={`${ex.id}-${index}`} className="bg-surface-dark rounded-3xl overflow-hidden border border-white/5 shadow-xl">
-              <div className="p-5 flex justify-between items-start border-b border-white/5 bg-white/[0.02]">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-primary border border-white/5">
-                    <span className="material-icons-round text-3xl">
-                      {EXERCISE_INFO[ex.type]?.icon || 'fitness_center'}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-white">{ex.chineseName}</h3>
-                    <div className="text-xs text-slate-500 tracking-wider uppercase font-medium">{ex.type}</div>
-                  </div>
-                </div>
-                <div className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg text-xs font-black ring-1 ring-primary/20">
-                  {ex.sets.length} 组
-                </div>
-              </div>
+          <AnimatedList className="space-y-6" staggerDelay={55} distance={18}>
+            {allExercises.map((ex, index) => {
+            const isCardioExercise = ex.type === ExerciseType.INCLINE_CARDIO || ex.type === 'Incline Cardio';
+            const primaryUnit = isCardioExercise ? 'km/h' : 'KG';
+            const secondaryUnit = isCardioExercise ? 'MIN' : 'REPS';
 
-              <div className="p-6 space-y-5">
-                {ex.sets.map((set, idx) => (
-                  <div
-                    key={set.id}
-                    className={`flex justify-between items-center text-sm py-1.5 relative ${set.isPR ? 'bg-primary/5 -mx-6 px-6 border-l-4 border-primary' : ''}`}
-                  >
-                    <span className={`w-8 font-black font-display text-xs ${set.isPR ? 'text-primary' : 'text-slate-600'}`}>{idx + 1}</span>
-                    <div className="flex-1 pl-4 flex items-baseline gap-1.5">
-                      <span className="text-white font-black font-display text-2xl tracking-tighter">{set.weight}</span>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">KG</span>
+            return (
+              <SpotlightCard key={`${ex.id}-${index}`} className="chrome-card rounded-3xl overflow-hidden">
+                <div className="p-5 flex justify-between items-start border-b border-white/5 bg-white/[0.02]">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-primary border border-white/5">
+                      <span className="material-icons-round text-3xl">
+                        {EXERCISE_INFO[ex.type]?.icon || 'fitness_center'}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-baseline gap-1">
-                        <span className={`font-black font-display text-2xl tracking-tighter ${set.isPR ? 'text-white' : 'text-slate-300'}`}>{set.reps}</span>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">REPS</span>
-                      </div>
-                      {set.isPR && (
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                          <span className="material-icons-round text-primary text-sm">emoji_events</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 ml-2">
-                        <button
-                          onClick={() => handleEditClick(set)}
-                          className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
-                        >
-                          <span className="material-icons-round text-slate-400 text-sm">edit</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSet(set.id)}
-                          className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center hover:bg-red-500/30 transition-colors"
-                        >
-                          <span className="material-icons-round text-red-400 text-sm">delete</span>
-                        </button>
-                      </div>
+                    <div>
+                      <h3 className="text-xl font-black text-white">{ex.chineseName}</h3>
+                      <div className="text-xs text-slate-500 tracking-wider uppercase font-medium">{ex.type}</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))
+                  <div className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg text-xs font-black ring-1 ring-primary/20">
+                    {ex.sets.length} 组
+                  </div>
+                </div>
+
+                <AnimatedList className="p-6 space-y-5" staggerDelay={34} distance={10}>
+                  {ex.sets.map((set, idx) => (
+                    <div
+                      key={set.id}
+                      className={`flex justify-between items-center text-sm py-1.5 relative ${set.isPR ? 'bg-primary/5 -mx-6 px-6 border-l-4 border-primary' : ''}`}
+                    >
+                      <span className={`w-8 font-black font-display text-xs ${set.isPR ? 'text-primary' : 'text-slate-600'}`}>{idx + 1}</span>
+                      <div className="flex-1 pl-4 flex items-baseline gap-1.5">
+                        <CountUp to={set.weight} duration={0.45} className="text-white font-black font-display text-2xl tracking-tighter" />
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{primaryUnit}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-baseline gap-1">
+                          <CountUp to={set.reps} duration={0.45} className={`font-black font-display text-2xl tracking-tighter ${set.isPR ? 'text-white' : 'text-slate-300'}`} />
+                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{secondaryUnit}</span>
+                        </div>
+                        {set.isPR && (
+                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                            <span className="material-icons-round text-primary text-sm">emoji_events</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 ml-2">
+                          <button
+                            onClick={() => handleEditClick(set)}
+                            className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+                          >
+                            <span className="material-icons-round text-slate-400 text-sm">edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSet(set.id)}
+                            className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center hover:bg-red-500/30 transition-colors"
+                          >
+                            <span className="material-icons-round text-red-400 text-sm">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </AnimatedList>
+              </SpotlightCard>
+            );
+            })}
+          </AnimatedList>
         ) : (
           <div className="text-center py-20 text-slate-500 text-sm">
             <span className="material-icons-round text-4xl mb-2 opacity-50">fitness_center</span>
@@ -236,43 +252,52 @@ const WorkoutSummary: React.FC<WorkoutSummaryProps> = ({
         )}
 
         <div className="py-4">
-          <button
+          <StarBorder
+            as="button"
             onClick={onCreateNew}
-            className="w-full py-4 bg-primary text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary-dark transition-colors"
+            className="pressable w-full rounded-[22px]"
+            contentClassName="w-full rounded-[21px] bg-primary py-4 text-white font-black gap-2 shadow-lg shadow-primary/20 hover:bg-primary-dark transition-colors"
+            color="#fff"
+            speed="4.5s"
+            thickness={1.5}
           >
             <span className="material-icons-round">add_circle</span>
             添加新训练
-          </button>
+          </StarBorder>
         </div>
       </main>
 
       {/* Edit Set Modal */}
       {editingSet && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-          <div className="w-full max-w-xs bg-surface-dark rounded-3xl overflow-hidden shadow-2xl border border-white/10 p-6 space-y-6">
+          <div className="chrome-card w-full max-w-xs rounded-3xl overflow-hidden p-6 space-y-6">
             <h3 className="text-xl font-black text-white text-center">修改数据</h3>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">Weight (KG)</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">
+                  {isEditingCardio ? 'Speed (km/h)' : 'Weight (KG)'}
+                </label>
                 <input
                   type="number"
                   value={editWeight}
                   onChange={(e) => setEditWeight(Number(e.target.value))}
-                  className="w-full bg-background-dark rounded-xl border border-white/10 p-4 text-2xl font-black text-white text-center focus:border-primary focus:outline-none"
+                  className="w-full bg-background-dark/80 rounded-xl border border-white/10 p-4 text-2xl font-black text-white text-center focus:border-primary focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">Reps</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">
+                  {isEditingCardio ? 'Duration (min)' : 'Reps'}
+                </label>
                 <div className="flex items-center gap-4">
-                  <button onClick={() => setEditReps(Math.max(1, editReps - 1))} className="w-12 h-12 rounded-xl bg-background-dark flex items-center justify-center text-slate-400 hover:bg-white/5">
+                  <button onClick={() => setEditReps(Math.max(1, editReps - 1))} className="control-button w-12 h-12 rounded-xl flex items-center justify-center text-slate-400 hover:bg-white/5">
                     <span className="material-icons-round">remove</span>
                   </button>
-                  <div className="flex-1 bg-background-dark rounded-xl border border-white/10 p-2 text-2xl font-black text-white text-center flex items-center justify-center h-12">
+                  <div className="flex-1 bg-background-dark/80 rounded-xl border border-white/10 p-2 text-2xl font-black text-white text-center flex items-center justify-center h-12">
                     {editReps}
                   </div>
-                  <button onClick={() => setEditReps(editReps + 1)} className="w-12 h-12 rounded-xl bg-background-dark flex items-center justify-center text-slate-400 hover:bg-white/5">
+                  <button onClick={() => setEditReps(editReps + 1)} className="control-button w-12 h-12 rounded-xl flex items-center justify-center text-slate-400 hover:bg-white/5">
                     <span className="material-icons-round">add</span>
                   </button>
                 </div>

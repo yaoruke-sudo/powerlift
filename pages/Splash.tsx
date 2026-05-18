@@ -1,9 +1,12 @@
 
 import React, { useState, useRef, useCallback } from 'react';
+import { AnimatedContent, StarBorder } from '../components/reactbits';
 
 interface SplashProps {
   onStart: () => void;
 }
+
+const splashBackground = new URL('../assets/icon-background.png', import.meta.url).href;
 
 /**
  * Splash 启动页 —— 支持左右滑动切换多页语录
@@ -90,7 +93,7 @@ const Splash: React.FC<SplashProps> = ({ onStart }) => {
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuCl8dinTIFK9Rb-cTeuXMRCj_BF7_bqfhDXe5LzwsxGRPS6oYMTBFooVikJvnJOPiCVqaCpLtITCfgQcjrTy8xtTiNrbFulv5z-TFbvA1XSDdbDH0ekcSJXf20VuivaYt3BoxbMWKiYEcxLlVHz-TiaY1vwVJnKIr_mT1SuneDzIzuCJ0QvoN1L789l0G2Ghd4t_4KEuqofCWIlI74xsdySvwrD1Od021yuD9M59mQUm50HgZTNNq79940KEIlKrC687lqksNVIy4s"
+          src={splashBackground}
           alt="Gym background"
           className="w-full h-full object-cover opacity-20 grayscale mix-blend-overlay"
         />
@@ -123,7 +126,7 @@ const Splash: React.FC<SplashProps> = ({ onStart }) => {
               style={{ minWidth: '100%', width: '100%' }}
               className="flex flex-col justify-center items-center px-8 text-center"
             >
-              <div className="space-y-6">
+              <AnimatedContent className="space-y-6" distance={20} duration={520}>
                 <h1 className="text-5xl font-black tracking-tight leading-tight text-white">
                   {page.lines.map((line, i) => (
                     <span key={i} className={`block ${i === 0 ? 'mb-2' : 'text-white/90'}`}>
@@ -140,7 +143,7 @@ const Splash: React.FC<SplashProps> = ({ onStart }) => {
                 <p className="text-white/40 text-sm font-display tracking-[0.2em] uppercase mt-4">
                   {page.subtitle}
                 </p>
-              </div>
+              </AnimatedContent>
             </div>
           ))}
         </div>
@@ -161,16 +164,21 @@ const Splash: React.FC<SplashProps> = ({ onStart }) => {
       </div>
 
       <footer className="relative z-20 px-8 pb-16">
-        <button
+        <StarBorder
+          as="button"
           onClick={onStart}
-          className="group w-full bg-primary hover:bg-primary/90 text-white font-bold text-xl py-5 px-8 rounded-2xl shadow-[0_8px_40px_rgba(242,108,13,0.4)] transition-all duration-300 transform active:scale-95 flex items-center justify-center relative overflow-hidden"
+          className="group w-full rounded-[22px] text-white font-bold text-xl transition-all duration-300 transform active:scale-95"
+          contentClassName="w-full rounded-[21px] bg-primary hover:bg-primary/90 py-5 px-8 shadow-[0_8px_40px_rgba(242,108,13,0.4)]"
+          color="#fff"
+          speed="4s"
+          thickness={1.5}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
           <span className="relative z-10 flex items-center gap-2">
             开始记录
             <span className="material-icons-round">arrow_forward</span>
           </span>
-        </button>
+        </StarBorder>
       </footer>
     </div>
   );

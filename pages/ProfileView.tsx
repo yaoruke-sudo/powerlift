@@ -2,7 +2,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ViewState, UserPhoto, UserProfile } from '../types';
 import BottomNav from '../components/BottomNav';
+import { AnimatedContent, AnimatedList, CountUp, GlareHover, SpotlightCard } from '../components/reactbits';
 import { fetchPhotos, fetchUserProfile, updateUserProfile, DEFAULT_USER_ID, createPhoto, deletePhoto, updatePhoto, fetchWorkouts } from '../services/api';
+import { SUPPORT_EMAIL, SUPPORT_REPLY_TIME } from '../constants';
 
 interface ProfileViewProps {
   onNavigate: (view: ViewState) => void;
@@ -162,23 +164,58 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
     }
   };
 
+  const handleCopySupportEmail = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(SUPPORT_EMAIL);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = SUPPORT_EMAIL;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (!copied) throw new Error('copy command failed');
+      }
+      alert(`客服邮箱已复制：${SUPPORT_EMAIL}`);
+    } catch (err) {
+      console.error('复制客服邮箱失败:', err);
+      window.prompt('请复制客服邮箱', SUPPORT_EMAIL);
+    }
+  };
+
   // 训练天数直接使用 state 中统计的去重日期数
+  const avatarSrc = isEditing ? editForm.avatarUrl : profile?.avatar_url;
+  const avatarInitial = (isEditing ? editForm.name : profile?.name || '练').trim().slice(0, 1) || '练';
+
+  const profileBmi = profile?.bmi || 0;
 
   return (
-    <div className="flex flex-col h-full bg-background-dark overflow-hidden">
-      <header className="px-8 pt-12 pb-6 shrink-0">
+    <div className="flex flex-col h-full screen-surface overflow-hidden">
+      <header className="px-6 pt-12 pb-5 shrink-0">
+        <AnimatedContent distance={14} duration={460}>
+          <SpotlightCard className="chrome-card rounded-[2rem] p-4" spotlightColor="rgba(242, 108, 13, 0.18)">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             {/* 头像区域 —— 编辑模式下可点击更换，保留原始颜色 */}
             <div
-              className={`w-20 h-20 rounded-3xl bg-surface-dark border-2 overflow-hidden shadow-2xl relative ${isEditing ? 'border-primary cursor-pointer' : 'border-primary/20'}`}
+              className={`w-20 h-20 rounded-3xl bg-surface-dark border-2 overflow-hidden shadow-2xl relative pressable ${isEditing ? 'border-primary cursor-pointer' : 'border-primary/20'}`}
               onClick={() => isEditing && avatarInputRef.current?.click()}
             >
-              <img
-                src={(isEditing ? editForm.avatarUrl : profile?.avatar_url) || 'https://picsum.photos/seed/powerlift/200/200'}
-                alt="Avatar"
-                className="w-full h-full object-cover"
-              />
+              {avatarSrc ? (
+                <img
+                  src={avatarSrc}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/90 via-[#1d2733] to-[#0b0f12] text-white">
+                  <span className="text-3xl font-black">{avatarInitial}</span>
+                </div>
+              )}
               {isEditing && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                   <span className="material-icons-round text-white text-xl">photo_camera</span>
@@ -214,7 +251,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
           </div>
           <button
             onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
-            className={`w-10 h-10 flex items-center justify-center rounded-2xl border ${isEditing ? 'bg-primary border-primary text-white' : 'bg-surface-dark border-white/5 text-slate-400'}`}
+            className={`w-10 h-10 flex items-center justify-center rounded-2xl border pressable ${isEditing ? 'bg-primary border-primary text-white' : 'control-button text-slate-300'}`}
           >
             <span className="material-icons-round">{isEditing ? 'check' : 'edit'}</span>
           </button>
@@ -222,8 +259,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
 
         {/* Render editable stats if editing, otherwise hidden here (conceptually, but user wants edit UI) */}
         {isEditing && (
-          <div className="mt-4 grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="bg-surface-dark rounded-2xl p-4 border border-white/10">
+          <div className="mt-4 grid grid-cols-2 gap-4 view-enter">
+            <div className="chrome-card rounded-2xl p-4 border border-white/10">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Height / 身高 (CM)</label>
               <input
                 type="text"
@@ -233,7 +270,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
                 className="bg-transparent text-2xl font-black text-white w-full focus:outline-none"
               />
             </div>
-            <div className="bg-surface-dark rounded-2xl p-4 border border-white/10">
+            <div className="chrome-card rounded-2xl p-4 border border-white/10">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Weight / 体重 (KG)</label>
               <input
                 type="text"
@@ -245,6 +282,22 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
             </div>
           </div>
         )}
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="hud-chip rounded-2xl px-3 py-3">
+                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Days</div>
+                <div className="text-lg font-black text-white font-display"><CountUp to={trainingDayCount} duration={0.8} /></div>
+              </div>
+              <div className="hud-chip rounded-2xl px-3 py-3">
+                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">BMI</div>
+                <div className="text-lg font-black text-white font-display"><CountUp to={profileBmi} duration={0.8} /></div>
+              </div>
+              <div className="hud-chip rounded-2xl px-3 py-3">
+                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Photos</div>
+                <div className="text-lg font-black text-white font-display"><CountUp to={photos.length} duration={0.8} /></div>
+              </div>
+            </div>
+          </SpotlightCard>
+        </AnimatedContent>
       </header>
 
 
@@ -256,13 +309,15 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
               <h2 className="text-xl font-black text-white tracking-tight">记忆照片墙</h2>
               <span className="text-[10px] font-normal text-slate-500 uppercase tracking-widest pt-1">GROWTH GALLERY</span>
             </div>
-            <button
-              type="button"
-              onClick={handleAddPhotoClick}
-              className="bg-primary/20 text-primary w-8 h-8 rounded-lg flex items-center justify-center"
-            >
-              <span className="material-icons-round text-sm">add_a_photo</span>
-            </button>
+            <GlareHover width="32px" borderRadius="12px" borderColor="rgba(242,108,13,0.28)" className="bg-primary/15">
+              <button
+                type="button"
+                onClick={handleAddPhotoClick}
+                className="pressable w-8 h-8 text-primary flex items-center justify-center"
+              >
+                <span className="material-icons-round text-sm">add_a_photo</span>
+              </button>
+            </GlareHover>
             {/* 隐藏的本地图片选择器 */}
             <input
               ref={fileInputRef}
@@ -274,11 +329,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
           </div>
 
           {photos.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4">
+            <AnimatedList className="grid grid-cols-2 gap-4" staggerDelay={55} distance={16}>
               {photos.map((photo, index) => (
                 <div
                   key={photo.id}
-                  className={`relative group overflow-hidden rounded-3xl border border-white/5 shadow-xl transition-all duration-500 hover:scale-[1.02] ${index === 0 ? 'col-span-2 aspect-[16/10]' : 'aspect-square'
+                  className={`chrome-card relative group overflow-hidden rounded-3xl border border-white/5 shadow-xl transition-all duration-500 hover:scale-[1.02] ${index === 0 ? 'col-span-2 aspect-[16/10]' : 'aspect-square'
                     }`}
                 >
                   <img
@@ -312,22 +367,57 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
                   </div>
                 </div>
               ))}
-            </div>
+            </AnimatedList>
           ) : (
-            <div className="text-center py-12 text-slate-500 text-sm">
+            <div className="chrome-card rounded-[2rem] text-center py-12 px-5 text-slate-500 text-sm">
               暂无照片，点击右上角相机按钮从本地导入一张训练照片。
             </div>
           )}
         </section>
 
-        {/* 隐私政策入口 — vivo 审核要求应用内必须有可访问的隐私政策 */}
+        {/* 客服反馈入口 — 应用商店审核要求应用内必须有明确、可用的客服反馈渠道 */}
+        <section>
+          <div className="chrome-card rounded-3xl border border-white/5 px-5 py-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 shrink-0 rounded-2xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary">
+                <span className="material-icons-round text-xl">support_agent</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-sm font-black text-white">客服与反馈</h2>
+                  <span className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded-lg px-2 py-1">7 个工作日内</span>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                  可反馈功能异常、使用问题、隐私与数据相关请求或改进建议。
+                </p>
+                <div className="mt-3 rounded-2xl border border-white/5 bg-background-dark/70 px-3 py-2">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">客服邮箱</p>
+                  <p className="text-sm font-bold text-slate-200 break-all">{SUPPORT_EMAIL}</p>
+                  <p className="mt-1 text-[11px] text-slate-500">回复时效：{SUPPORT_REPLY_TIME}</p>
+                </div>
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={handleCopySupportEmail}
+                    className="control-button pressable flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 px-3 py-2.5 text-xs font-black text-slate-300"
+                  >
+                    <span className="material-icons-round text-sm">content_copy</span>
+                    复制邮箱
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 隐私政策入口 — 应用商店审核要求应用内必须有可访问的隐私政策 */}
         <section>
           <button
             onClick={() => onNavigate('privacy')}
-            className="w-full flex items-center justify-between bg-surface-dark rounded-2xl border border-white/5 px-5 py-4 group hover:border-white/10 transition-colors"
+            className="chrome-card pressable w-full flex items-center justify-between rounded-3xl border border-white/5 px-5 py-4 group hover:border-white/10 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <span className="material-icons-round text-slate-400 text-xl">privacy_tip</span>
+              <span className="material-icons-round text-primary text-xl">privacy_tip</span>
               <span className="text-sm font-bold text-slate-300">隐私政策</span>
             </div>
             <span className="material-icons-round text-slate-500 text-lg group-hover:text-slate-300 transition-colors">chevron_right</span>
@@ -339,7 +429,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
       {editingDatePhotoId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEditingDatePhotoId(null)} />
-          <div className="relative bg-surface-dark rounded-3xl border border-white/10 p-6 w-80 shadow-2xl">
+          <div className="relative chrome-card rounded-3xl border border-white/10 p-6 w-80 shadow-2xl">
             <h3 className="text-base font-black text-white mb-4">编辑照片日期</h3>
             <input
               type="date"
@@ -350,7 +440,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
             <div className="flex gap-3">
               <button
                 onClick={() => setEditingDatePhotoId(null)}
-                className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-400 font-bold text-sm"
+                className="control-button flex-1 py-2.5 rounded-xl border border-white/10 text-slate-400 font-bold text-sm"
               >
                 取消
               </button>
@@ -371,4 +461,3 @@ const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate, onProfileUpdated 
 };
 
 export default ProfileView;
-

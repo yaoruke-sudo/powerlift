@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { ExerciseType, WorkoutSession } from '../types';
 import { EXERCISE_INFO } from '../constants';
+import { AnimatedContent, AnimatedList, CountUp, GlareHover, SpotlightCard, StarBorder } from '../components/reactbits';
 import { createWorkout, DEFAULT_USER_ID } from '../services/api';
 
 interface RecordWorkoutProps {
@@ -17,6 +18,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
   const [note, setNote] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   // 有氧运动专用状态
   const [duration, setDuration] = useState(30); // 时间（分钟）
   const [incline, setIncline] = useState(5); // 坡度（度）
@@ -28,6 +30,10 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
   });
   // 自定义动作列表（持久化在 localStorage 中）
   const [customExercises, setCustomExercises] = useState<{ type: string; name: string; category: string }[]>([]);
+
+  const weightPresets = [40, 50, 60, 70, 80, 100, 120];
+  const repPresets = [5, 8, 10, 12, 15];
+  const setPresets = [3, 4, 5];
 
   // 默认内置动作（与 ExerciseType 枚举同步）
   const baseExercises = [
@@ -65,6 +71,13 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
     { type: 'Custom', name: '新增自定义动作', category: '其他' },
   ];
 
+  const normalizedExerciseName = selectedExercise.name.trim();
+  const isCustomExercise = selectedExercise.type === 'Custom';
+  const canSave = !isSaving && (!isCustomExercise || normalizedExerciseName.length > 0);
+  const sessionSummary = isCardio
+    ? `${duration} 分钟 · ${incline}° · ${speed} km/h`
+    : `${sets} 组 · ${reps} 次`;
+
   // 保存自定义动作到 localStorage
   const persistCustomExercises = (list: { type: string; name: string; category: string }[]) => {
     setCustomExercises(list);
@@ -77,7 +90,12 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
 
   const handleExerciseSelect = (ex: any) => {
     // 选择任意动作后，都关闭弹窗，让上方主卡片生效
-    setSelectedExercise(ex);
+    if (ex.type === 'Custom') {
+      setSelectedExercise({ type: 'Custom', name: '', category: '自定义' });
+    } else {
+      setSelectedExercise(ex);
+    }
+    setStatusMessage('');
     setIsPickerOpen(false);
   };
 
@@ -86,7 +104,13 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
    * 根据 sets/reps/weight 生成对应组数据，然后调用 API 创建
    */
   const handleSave = async () => {
+    if (!canSave) {
+      setStatusMessage('先给自定义动作起个名字，再保存训练。');
+      return;
+    }
+
     setIsSaving(true);
+    setStatusMessage('');
     try {
       const now = new Date();
       // Use initialDate if available, otherwise use today (handling local time correctly for creation)
@@ -130,7 +154,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
         setsData = Array.from({ length: sets }, (_, idx) => ({
           weight,
           reps,
-          is_pr: idx === sets - 1,
+          is_pr: false,
         }));
         workoutDuration = sets * 3;
       }
@@ -138,8 +162,8 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
       // 如果当前是一个新自定义动作（type === 'Custom'，且用户输入了名称），先把它加入自定义动作列表
       if (selectedExercise.type === 'Custom' && selectedExercise.name && selectedExercise.name !== '新增自定义动作') {
         const newCustom = {
-          type: selectedExercise.name,
-          name: selectedExercise.name,
+          type: normalizedExerciseName,
+          name: normalizedExerciseName,
           category: selectedExercise.category || '其他',
         };
         if (!customExercises.some(ex => ex.type === newCustom.type)) {
@@ -160,8 +184,8 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
         note: finalNote,
         exercises: [
           {
-            type: selectedExercise.type === 'Custom' ? selectedExercise.name : selectedExercise.type,
-            chinese_name: selectedExercise.name,
+            type: selectedExercise.type === 'Custom' ? normalizedExerciseName : selectedExercise.type,
+            chinese_name: selectedExercise.type === 'Custom' ? normalizedExerciseName : selectedExercise.name,
             sets: setsData,
           },
         ],
@@ -177,31 +201,53 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
   };
 
   return (
-    <div className="flex flex-col h-full bg-background-dark overflow-hidden">
+    <div className="flex flex-col h-full screen-surface overflow-hidden">
       {/* Header */}
       <header className="px-6 py-8 flex items-center justify-between shrink-0">
-        <div>
+        <AnimatedContent distance={16} duration={380}>
           <h1 className="text-3xl font-black text-white">
             {initialDate ? '补录训练' : '今日训练'}
           </h1>
+          <div className="mt-3 flex gap-2">
+            <span className="hud-chip rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-300">
+              {isCardio ? 'Cardio' : 'Power'}
+            </span>
+            <span className="hud-chip rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-primary">
+              {isCardio ? `${duration} MIN` : `${sets} x ${reps}`}
+            </span>
+          </div>
           {initialDate && (
             <p className="text-slate-500 text-sm font-bold tracking-widest uppercase mt-1">
               {initialDate}
             </p>
           )}
-        </div>
+        </AnimatedContent>
         <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-dark text-slate-400">
           <span className="material-icons-round">close</span>
         </button>
       </header>
 
+      {statusMessage && (
+        <div className="toast-enter mx-6 mb-3 flex items-center gap-2 rounded-2xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm font-bold text-primary">
+          <span className="material-icons-round text-base">info</span>
+          {statusMessage}
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto px-6 py-2 space-y-10 scrollbar-hide">
 
         {/* Active Exercise Card */}
-        <button
-          onClick={() => setIsPickerOpen(true)}
-          className="w-full bg-surface-dark rounded-2xl p-6 border border-white/5 relative overflow-hidden text-left hover:bg-surface-lighter transition-colors group"
+        <GlareHover
+          className="command-card w-full rounded-[28px] shadow-[0_18px_36px_rgba(0,0,0,0.22)]"
+          borderRadius="28px"
+          background="transparent"
+          borderColor="transparent"
+          glareOpacity={0.14}
+        >
+          <button
+            onClick={() => setIsPickerOpen(true)}
+            className="interactive-surface pressable-soft w-full rounded-[28px] p-6 relative overflow-hidden text-left hover:bg-surface-lighter/60 group"
         >
           <div className="flex justify-between items-start relative z-10">
             <div>
@@ -212,10 +258,13 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                 {selectedExercise.type === 'Custom' ? (
                   <input
                     type="text"
-                    value={selectedExercise.name === '自定义动作' ? '' : selectedExercise.name}
+                    value={selectedExercise.name}
                     placeholder="输入动作名称"
                     onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => setSelectedExercise({ ...selectedExercise, name: e.target.value })}
+                    onChange={(e) => {
+                      setSelectedExercise({ ...selectedExercise, name: e.target.value });
+                      setStatusMessage('');
+                    }}
                     className="bg-transparent border-b border-white/20 w-full focus:outline-none focus:border-primary"
                     autoFocus
                   />
@@ -224,20 +273,21 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                 )}
               </h2>
               <div className="text-slate-500 text-xs font-bold mt-2 uppercase tracking-tight">
-                {selectedExercise.type}
+                {sessionSummary}
               </div>
             </div>
             <div className="flex flex-col items-end gap-4">
               <span className="material-icons-round text-primary/40 group-hover:text-primary group-hover:scale-110 transition-all">open_in_full</span>
-              <div className="text-slate-400 text-sm font-medium">
-                {isCardio ? `${duration}分 • ${incline}° • ${speed}km/h` : `${sets} 组 • 目标 ${reps} 次`}
+              <div className="rounded-full bg-white/5 px-3 py-1.5 text-xs font-black text-slate-300 ring-1 ring-white/5">
+                {isCardio ? '有氧' : '力量'}
               </div>
             </div>
           </div>
           <div className="absolute right-0 bottom-0 opacity-5 -mr-6 -mb-6 group-hover:scale-110 transition-transform duration-500">
             <span className="material-icons-round text-[160px]">{isCardio ? 'landscape' : 'fitness_center'}</span>
           </div>
-        </button>
+          </button>
+        </GlareHover>
 
         {/* Input Controls —— 根据运动类型切换显示 */}
         <div className="space-y-12">
@@ -248,13 +298,39 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
                   <span className="text-xs font-black text-slate-500 tracking-[0.2em] uppercase">Duration / 时间</span>
+                  <span className="text-[10px] font-black text-slate-600 tracking-widest">1-120 MIN</span>
                 </div>
-                <div className="bg-surface-dark rounded-2xl p-6 border border-white/5 shadow-inner">
-                  <div className="flex justify-center items-baseline gap-2 mb-8">
-                    <span className="text-6xl font-black text-white font-display tracking-tighter">{duration}</span>
-                    <span className="text-xl font-black text-primary font-display">分钟</span>
+                <div className="chrome-card rounded-[28px] p-6">
+                  <div className="mb-8 flex items-center justify-between gap-4">
+                    <button
+                      onClick={() => setDuration(Math.max(1, duration - 5))}
+                      className="pressable focus-ring control-button h-12 w-12 rounded-2xl text-slate-300"
+                    >
+                      <span className="material-icons-round">remove</span>
+                    </button>
+                    <div
+                      className="readout-ring"
+                      style={{ '--arc': `${(duration / 120) * 360}deg` } as React.CSSProperties}
+                    >
+                      <div className="readout-core">
+                        <div className="flex items-baseline justify-center gap-2">
+                          <CountUp
+                            to={duration}
+                            duration={0.45}
+                            className="text-5xl font-black text-white font-display tracking-tighter"
+                          />
+                          <span className="text-base font-black text-primary font-display">分钟</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setDuration(Math.min(120, duration + 5))}
+                      className="pressable focus-ring control-button h-12 w-12 rounded-2xl text-slate-300"
+                    >
+                      <span className="material-icons-round">add</span>
+                    </button>
                   </div>
-                  <div className="relative h-12 ruler-container">
+                  <div className="relative h-12 ruler-container ruler-meter rounded-2xl overflow-hidden">
                     <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(242,108,13,0.8)] z-20"></div>
                     <div className="flex items-end justify-between h-full px-2 opacity-30">
                       {Array.from({ length: 21 }).map((_, i) => (
@@ -275,16 +351,27 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                       style={{ width: `${(duration / 120) * 100}%` }}
                     ></div>
                   </div>
+                  <div className="mt-5 flex gap-2 overflow-x-auto scrollbar-hide">
+                    {[20, 30, 40, 45, 60].map(preset => (
+                      <button
+                        key={preset}
+                        onClick={() => setDuration(preset)}
+                        className={`pressable shrink-0 rounded-xl px-3 py-2 text-xs font-black ring-1 ${duration === preset ? 'bg-primary text-white ring-primary' : 'bg-white/5 text-slate-400 ring-white/5'}`}
+                      >
+                        {preset}分
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* 坡度 + 速度 并排 */}
               <div className="grid grid-cols-2 gap-6">
                 {/* 坡度 */}
-                <div className="bg-surface-dark rounded-2xl p-5 border border-white/5">
+                <div className="chrome-card rounded-2xl p-5">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block text-center mb-3">Incline / 坡度</span>
                   <div className="flex justify-center items-baseline gap-1 mb-4">
-                    <span className="text-3xl font-black text-white font-display">{incline}</span>
+                    <CountUp to={incline} duration={0.35} className="text-3xl font-black text-white font-display" />
                     <span className="text-sm font-black text-primary">°</span>
                   </div>
                   <div className="relative h-8">
@@ -297,7 +384,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                       onChange={(e) => setIncline(Number(e.target.value))}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30"
                     />
-                    <div className="absolute inset-0 rounded-lg bg-white/5 overflow-hidden">
+                    <div className="absolute inset-0 rounded-lg ruler-meter overflow-hidden">
                       <div
                         className="h-full bg-primary/30 rounded-lg transition-all duration-75"
                         style={{ width: `${(incline / 45) * 100}%` }}
@@ -311,10 +398,10 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                 </div>
 
                 {/* 速度 */}
-                <div className="bg-surface-dark rounded-2xl p-5 border border-white/5">
+                <div className="chrome-card rounded-2xl p-5">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block text-center mb-3">Speed / 速度</span>
                   <div className="flex justify-center items-baseline gap-1 mb-4">
-                    <span className="text-3xl font-black text-white font-display">{speed}</span>
+                    <CountUp to={speed} duration={0.35} className="text-3xl font-black text-white font-display" />
                     <span className="text-[10px] font-black text-primary">km/h</span>
                   </div>
                   <div className="relative h-8">
@@ -327,7 +414,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                       onChange={(e) => setSpeed(Number(parseFloat(e.target.value).toFixed(1)))}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30"
                     />
-                    <div className="absolute inset-0 rounded-lg bg-white/5 overflow-hidden">
+                    <div className="absolute inset-0 rounded-lg ruler-meter overflow-hidden">
                       <div
                         className="h-full bg-primary/30 rounded-lg transition-all duration-75"
                         style={{ width: `${(speed / 15) * 100}%` }}
@@ -348,13 +435,39 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
                   <span className="text-xs font-black text-slate-500 tracking-[0.2em] uppercase">Weight / 重量</span>
+                  <span className="text-[10px] font-black text-slate-600 tracking-widest">STEP 2.5 KG</span>
                 </div>
-                <div className="bg-surface-dark rounded-2xl p-6 border border-white/5 shadow-inner">
-                  <div className="flex justify-center items-baseline gap-2 mb-8">
-                    <span className="text-6xl font-black text-white font-display tracking-tighter">{weight}</span>
-                    <span className="text-xl font-black text-primary font-display">KG</span>
+                <div className="chrome-card rounded-[28px] p-6">
+                  <div className="mb-8 flex items-center justify-between gap-4">
+                    <button
+                      onClick={() => setWeight(Math.max(0, weight - 2.5))}
+                      className="pressable focus-ring control-button h-12 w-12 rounded-2xl text-slate-300"
+                    >
+                      <span className="material-icons-round">remove</span>
+                    </button>
+                    <div
+                      className="readout-ring"
+                      style={{ '--arc': `${(weight / 200) * 360}deg` } as React.CSSProperties}
+                    >
+                      <div className="readout-core">
+                        <div className="flex items-baseline justify-center gap-2">
+                          <CountUp
+                            to={weight}
+                            duration={0.45}
+                            className="text-5xl font-black text-white font-display tracking-tighter"
+                          />
+                          <span className="text-base font-black text-primary font-display">KG</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setWeight(Math.min(200, weight + 2.5))}
+                      className="pressable focus-ring control-button h-12 w-12 rounded-2xl text-slate-300"
+                    >
+                      <span className="material-icons-round">add</span>
+                    </button>
                   </div>
-                  <div className="relative h-12 ruler-container">
+                  <div className="relative h-12 ruler-container ruler-meter rounded-2xl overflow-hidden">
                     <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(242,108,13,0.8)] z-20"></div>
                     <div className="flex items-end justify-between h-full px-2 opacity-30">
                       {Array.from({ length: 21 }).map((_, i) => (
@@ -375,36 +488,69 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                       style={{ width: `${(weight / 200) * 100}%` }}
                     ></div>
                   </div>
+                  <div className="mt-5 flex gap-2 overflow-x-auto scrollbar-hide">
+                    {weightPresets.map(preset => (
+                      <button
+                        key={preset}
+                        onClick={() => setWeight(preset)}
+                        className={`pressable shrink-0 rounded-xl px-3 py-2 text-xs font-black ring-1 ${weight === preset ? 'bg-primary text-white ring-primary' : 'bg-white/5 text-slate-400 ring-white/5'}`}
+                      >
+                        {preset}KG
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Sets/Reps Counters */}
               <div className="grid grid-cols-2 gap-6">
-                <div className="bg-surface-dark rounded-2xl p-5 border border-white/5 text-center">
+                <SpotlightCard className="chrome-card rounded-[24px] p-5 text-center">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sets / 组数</span>
                   <div className="flex items-center justify-center gap-4 mt-3">
-                    <button onClick={() => setSets(Math.max(1, sets - 1))} className="w-8 h-8 rounded-lg bg-surface-lighter flex items-center justify-center text-slate-400 active:bg-primary active:text-white transition-colors">
+                    <button onClick={() => setSets(Math.max(1, sets - 1))} className="pressable focus-ring w-10 h-10 rounded-xl bg-surface-lighter flex items-center justify-center text-slate-400 active:bg-primary active:text-white transition-colors">
                       <span className="material-icons-round text-lg">remove</span>
                     </button>
-                    <span className="text-3xl font-black text-white font-display w-8">{sets}</span>
-                    <button onClick={() => setSets(sets + 1)} className="w-8 h-8 rounded-lg bg-surface-lighter flex items-center justify-center text-slate-400 active:bg-primary active:text-white transition-colors">
+                    <CountUp to={sets} duration={0.35} className="text-3xl font-black text-white font-display w-8" />
+                    <button onClick={() => setSets(sets + 1)} className="pressable focus-ring w-10 h-10 rounded-xl bg-surface-lighter flex items-center justify-center text-slate-400 active:bg-primary active:text-white transition-colors">
                       <span className="material-icons-round text-lg">add</span>
                     </button>
                   </div>
-                </div>
+                  <div className="mt-4 flex justify-center gap-1.5">
+                    {setPresets.map(preset => (
+                      <button
+                        key={preset}
+                        onClick={() => setSets(preset)}
+                        className={`pressable h-7 min-w-7 rounded-lg text-[10px] font-black ${sets === preset ? 'bg-primary text-white' : 'bg-white/5 text-slate-500'}`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </SpotlightCard>
 
-                <div className="bg-surface-dark rounded-2xl p-5 border border-white/5 text-center">
+                <SpotlightCard className="chrome-card rounded-[24px] p-5 text-center">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Reps / 次数</span>
                   <div className="flex items-center justify-center gap-4 mt-3">
-                    <button onClick={() => setReps(Math.max(1, reps - 1))} className="w-8 h-8 rounded-lg bg-surface-lighter flex items-center justify-center text-slate-400 active:bg-primary active:text-white transition-colors">
+                    <button onClick={() => setReps(Math.max(1, reps - 1))} className="pressable focus-ring w-10 h-10 rounded-xl bg-surface-lighter flex items-center justify-center text-slate-400 active:bg-primary active:text-white transition-colors">
                       <span className="material-icons-round text-lg">remove</span>
                     </button>
-                    <span className="text-3xl font-black text-white font-display w-8">{reps}</span>
-                    <button onClick={() => setReps(reps + 1)} className="w-8 h-8 rounded-lg bg-surface-lighter flex items-center justify-center text-slate-400 active:bg-primary active:text-white transition-colors">
+                    <CountUp to={reps} duration={0.35} className="text-3xl font-black text-white font-display w-8" />
+                    <button onClick={() => setReps(reps + 1)} className="pressable focus-ring w-10 h-10 rounded-xl bg-surface-lighter flex items-center justify-center text-slate-400 active:bg-primary active:text-white transition-colors">
                       <span className="material-icons-round text-lg">add</span>
                     </button>
                   </div>
-                </div>
+                  <div className="mt-4 flex justify-center gap-1.5">
+                    {repPresets.map(preset => (
+                      <button
+                        key={preset}
+                        onClick={() => setReps(preset)}
+                        className={`pressable h-7 min-w-7 rounded-lg text-[10px] font-black ${reps === preset ? 'bg-primary text-white' : 'bg-white/5 text-slate-500'}`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                </SpotlightCard>
               </div>
             </>
           )}
@@ -412,8 +558,8 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
       </main>
 
       {/* Footer Actions */}
-      <footer className="p-6 pb-12 bg-background-dark/80 backdrop-blur-lg space-y-4 border-t border-white/5">
-        <div className="bg-surface-dark rounded-xl px-4 py-3 flex items-center gap-3 border border-white/5">
+      <footer className="p-4 pb-7 bg-background-dark/90 backdrop-blur-md space-y-3 border-t border-white/5">
+        <div className="chrome-card rounded-xl px-4 py-2.5 flex items-center gap-3">
           <span className="material-icons-round text-slate-500 text-lg">edit_note</span>
           <input
             type="text"
@@ -423,46 +569,58 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
             className="bg-transparent border-none focus:ring-0 text-sm text-slate-300 w-full placeholder:text-slate-600"
           />
         </div>
-        <button
+        <StarBorder
+          as="button"
           onClick={handleSave}
-          disabled={isSaving}
-          className={`w-full bg-primary py-5 rounded-2xl text-white font-black text-xl flex items-center justify-center gap-3 shadow-lg shadow-primary/30 active:scale-95 transition-all ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
+          disabled={!canSave}
+          className={`pressable w-full rounded-[22px] transition-all ${!canSave ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+          contentClassName="w-full rounded-[21px] bg-primary py-4 text-white font-black text-lg gap-3 shadow-lg shadow-primary/25"
+          color="#fff"
+          speed="4s"
+          thickness={1.5}
         >
           <span className="material-icons-round text-2xl">{isSaving ? 'hourglass_empty' : 'check_circle'}</span>
-          {isSaving ? '保存中...' : '保存此组数据'}
-        </button>
+          {isSaving ? '保存中...' : isCustomExercise && !normalizedExerciseName ? '先填写动作名称' : '保存此组数据'}
+        </StarBorder>
       </footer>
 
       {/* Exercise Picker Modal */}
       {isPickerOpen && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/80 backdrop-blur-sm px-4 pb-8">
-          <div className="w-full max-w-sm bg-surface-dark rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[70vh]">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/80 backdrop-blur-sm px-4 pb-8 fade-enter">
+          <div className="sheet-enter w-full max-w-sm bg-surface-dark rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[70vh]">
             <div className="p-6 border-b border-white/5 flex justify-between items-center">
               <h3 className="text-xl font-black text-white">选择运动项目</h3>
               <button onClick={() => setIsPickerOpen(false)} className="material-icons-round text-slate-500">close</button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide">
+            <AnimatedList className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide" staggerDelay={26} distance={10}>
               {availableExercises.map((ex, idx) => {
                 const isCustomSaved = customExercises.some(c => c.type === ex.type);
                 const isNewCustomEntry = ex.type === 'Custom';
+                const isActive = selectedExercise.type === ex.type || selectedExercise.name === ex.name;
 
                 return (
                   <div
                     key={idx}
-                    className="w-full p-3 rounded-xl text-left flex items-center gap-3 transition-colors group hover:bg-white/5"
+                    className={`w-full p-3 rounded-2xl text-left flex items-center gap-3 transition-colors group ${isActive ? 'bg-primary/10 ring-1 ring-primary/20' : 'hover:bg-white/5'}`}
                   >
                     <button
                       onClick={() => handleExerciseSelect(ex)}
                       className="flex-1 flex items-center gap-4"
                     >
+                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${isNewCustomEntry ? 'bg-primary/15 text-primary' : 'bg-white/5 text-slate-400'}`}>
+                        <span className="material-icons-round text-lg">{isNewCustomEntry ? 'add' : EXERCISE_INFO[ex.type as ExerciseType]?.icon || 'fitness_center'}</span>
+                      </div>
                       <div className="flex-1">
                         <div className="text-white font-bold">
-                          {isNewCustomEntry ? '➕ 新增自定义动作' : ex.name}
+                          {isNewCustomEntry ? '新增自定义动作' : ex.name}
                         </div>
                         {isNewCustomEntry && (
                           <div className="text-xs text-slate-500 uppercase">
-                            点击后在上方输入名称
+                            选择后在上方输入名称
                           </div>
+                        )}
+                        {!isNewCustomEntry && (
+                          <div className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-600">{ex.category}</div>
                         )}
                       </div>
                     </button>
@@ -483,7 +641,7 @@ const RecordWorkout: React.FC<RecordWorkoutProps> = ({ initialDate, onBack, onSa
                   </div>
                 );
               })}
-            </div>
+            </AnimatedList>
           </div>
         </div>
       )}
